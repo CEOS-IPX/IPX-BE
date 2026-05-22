@@ -1,3 +1,46 @@
 spring:
   application:
     name: ipx-be
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:patent_db}
+    username: ${POSTGRES_USER:ipx_postgres_user}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # password: ${REDIS_PASSWORD}     # 개발 환경: 비밀번호 없음, 배포 시 활성화
+
+opensearch:
+  host: ${OPENSEARCH_HOST:localhost}
+  port: ${OPENSEARCH_PORT:9200}
+  scheme: http                          # 개발 환경: http, 배포 시 https
+  # username: ${OPENSEARCH_USERNAME}    # 보안 플러그인 활성화 시 사용
+  # password: ${OPENSEARCH_PASSWORD}    # 보안 플러그인 활성화 시 사용
+  index-name: patents
+
+onnx:
+  model-path: ${ONNX_MODEL_PATH:onnx/bge_m3_model.onnx}
+  tokenizer-path: ${ONNX_TOKENIZER_PATH:onnx/bge_m3_tokenizer.onnx}
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    ceos.ipx: DEBUG
+    org.opensearch: WARN
+    org.hibernate.SQL: DEBUG

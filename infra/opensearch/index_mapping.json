@@ -1,0 +1,140 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "tokenizer": {
+        "nori_user_dict_tokenizer": {
+          "type": "nori_tokenizer",
+          "decompound_mode": "mixed"
+        }
+      },
+      "filter": {
+        "synonym_filter": {
+          "type": "synonym",
+          "synonyms_path": "analysis/synonyms_patent.txt"
+        },
+        "nori_posfilter": {
+          "type": "nori_part_of_speech",
+          "stoptags": [
+            "E",
+            "IC",
+            "J",
+            "MAG",
+            "MAJ",
+            "MM",
+            "SP",
+            "SSC",
+            "SSO",
+            "SC",
+            "SE",
+            "XPN",
+            "XSA",
+            "XSN",
+            "XSV",
+            "UNA",
+            "NA",
+            "VSV"
+          ]
+        }
+      },
+      "analyzer": {
+        "korean_analyzer": {
+          "type": "custom",
+          "tokenizer": "nori_user_dict_tokenizer",
+          "filter": [
+            "nori_posfilter",
+            "nori_readingform",
+            "lowercase"
+          ]
+        },
+        "korean_synonym_analyzer": {
+          "type": "custom",
+          "tokenizer": "nori_user_dict_tokenizer",
+          "filter": [
+            "nori_posfilter",
+            "nori_readingform",
+            "lowercase",
+            "synonym_filter"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "application_number": {
+        "type": "keyword"
+      },
+      "registration_number": {
+        "type": "keyword"
+      },
+      "open_number": {
+        "type": "keyword"
+      },
+      "application_date": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
+      "open_date": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
+      "registration_date": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "korean_analyzer"
+      },
+      "abstract_clean": {
+        "type": "text",
+        "analyzer": "korean_synonym_analyzer"
+      },
+      "claims_independent": {
+        "type": "text",
+        "analyzer": "korean_synonym_analyzer"
+      },
+      "applicant_name": {
+        "type": "text",
+        "analyzer": "korean_analyzer",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "inventor_name": {
+        "type": "text",
+        "analyzer": "korean_analyzer",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "ipc_codes": {
+        "type": "keyword"
+      },
+      "cpc_codes": {
+        "type": "keyword"
+      },
+      "legal_status": {
+        "type": "keyword"
+      },
+      "big_drawing": {
+        "type": "keyword",
+        "index": false
+      },
+      "drawing": {
+        "type": "keyword",
+        "index": false
+      },
+      "collected_date": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      }
+    }
+  }
+}

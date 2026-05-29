@@ -1,0 +1,83 @@
+# ============================================================
+# 로컬 개발용 docker-compose.yml
+# ============================================================
+# 공유 인프라를 Spring 한 곳에서 관리:
+#   - postgres   : Spring + Python 두 서버가 공유
+#   - redis      : Spring 전용 (Refresh Token, OTP, 블랙리스트, Rate Limiting)
+#   - opensearch : Python 전용 (키워드 검색) -> 인프라는 여기서 관리
+#
+# Spring/Python 서버는 컨테이너로 띄우지 않고 각자 IDE에서 로컬 실행
+# ============================================================
+
+services:
+
+  # ===== PostgreSQL + pgvector =====
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: patent-postgres
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-patent_db}
+      POSTGRES_USER: ${POSTGRES_USER:-ipx_patent_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql    # 컨테이너 최초 시작 시 자동 실행
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ipx_patent_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ===== Redis =====
+  redis:
+    image: redis:7-alpine
+    container_name: patent-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ===== OpenSearch =====
+  opensearch:
+    build:
+      context: ./infra/opensearch
+      dockerfile: Dockerfile
+    container_name: patent-opensearch
+    ports:
+      - "${OPENSEARCH_PORT:-9200}:9200"
+      - "9600:9600"
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD}
+      - OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g
+      - plugins.security.disabled=true
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+      - ./infra/opensearch/synonyms_patent.txt:/usr/share/opensearch/config/analysis/synonyms_patent.txt
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  opensearch_data:

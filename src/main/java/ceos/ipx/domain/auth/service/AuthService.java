@@ -3,7 +3,6 @@ package ceos.ipx.domain.auth.service;
 import ceos.ipx.domain.user.dto.SignUpRequest;
 import ceos.ipx.domain.user.dto.SignUpResponse;
 import ceos.ipx.domain.user.entity.User;
-import ceos.ipx.domain.user.entity.UserProvider;
 import ceos.ipx.domain.user.repository.UserRepository;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
@@ -40,7 +39,6 @@ public class AuthService {
                 .passwordHash(encodedPassword)
                 .name(request.name())
                 .company(request.company())
-                .provider(UserProvider.LOCAL)
                 .providerId(null)
                 .isActive(true)
                 .build();
@@ -52,7 +50,7 @@ public class AuthService {
                 savedUser.getEmail(),
                 savedUser.getName(),
                 savedUser.getCompany(),
-                UserProvider.LOCAL.name(),
+                savedUser.getProvider().name(),
                 true
         );
     }

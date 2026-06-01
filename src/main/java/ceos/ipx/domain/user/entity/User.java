@@ -38,7 +38,7 @@ public class User extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private UserProvider provider;
+    private UserProvider provider = UserProvider.LOCAL;
 
     @Column(name = "provider_id", length = 255)
     private String providerId;
@@ -60,7 +60,7 @@ public class User extends BaseEntity {
         this.passwordHash = passwordHash;
         this.name = name;
         this.company = company;
-        this.provider = provider;
+        this.provider = provider == null ? UserProvider.LOCAL : provider;
         this.providerId = providerId;
         this.isActive = isActive == null ? true : isActive;
     }

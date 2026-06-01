@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
@@ -31,11 +32,19 @@ public record SignUpRequest(
         @Schema(description = "Password", example = "Password123!")
         @NotBlank(message = "Password is required.")
         @Size(min = 8, max = 20, message = "Password must be between 8 and 20 characters.")
+        @Pattern(
+                regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&]).+$",
+                message = "Password must include at least one letter, one number, and one special character."
+        )
         String password,
 
         @Schema(description = "Password confirmation", example = "Password123!")
         @NotBlank(message = "Password confirmation is required.")
         @Size(min = 8, max = 20, message = "Password confirmation must be between 8 and 20 characters.")
+        @Pattern(
+                regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&]).+$",
+                message = "Password confirmation must include at least one letter, one number, and one special character."
+        )
         String passwordConfirm,
 
         @Schema(description = "Company name", example = "IPX", nullable = true)

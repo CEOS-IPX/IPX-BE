@@ -1,5 +1,7 @@
 package ceos.ipx.domain.auth.controller;
 
+import ceos.ipx.domain.auth.dto.LoginRequest;
+import ceos.ipx.domain.auth.dto.LoginResponse;
 import ceos.ipx.domain.auth.service.AuthService;
 import ceos.ipx.domain.user.dto.SignUpRequest;
 import ceos.ipx.domain.user.dto.SignUpResponse;
@@ -33,11 +35,30 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류")
     })
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(@Valid @RequestBody SignUpRequest request) {
+    public ResponseEntity<ApiResponse<SignUpResponse>> signUp(
+            @Valid @RequestBody SignUpRequest request
+    ) {
         SignUpResponse response = authService.signUp(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(response));
+    }
+
+    @Operation(summary = "일반 로그인", description = "이메일과 비밀번호로 로그인하고 JWT AccessToken을 발급합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력값 검증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "이메일 또는 비밀번호 불일치"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "비활성화된 계정"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>> login(
+            @Valid @RequestBody LoginRequest request
+    ) {
+        LoginResponse response = authService.login(request);
+
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

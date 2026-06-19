@@ -1,11 +1,15 @@
 package ceos.ipx.domain.auth.service;
 
+import ceos.ipx.domain.auth.dto.LoginRequest;
+import ceos.ipx.domain.auth.dto.LoginResponse;
+import ceos.ipx.domain.auth.dto.LoginUserResponse;
 import ceos.ipx.domain.user.dto.SignUpRequest;
 import ceos.ipx.domain.user.dto.SignUpResponse;
 import ceos.ipx.domain.user.entity.User;
 import ceos.ipx.domain.user.repository.UserRepository;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
+import ceos.ipx.global.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,6 +22,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Transactional
     public SignUpResponse signUp(SignUpRequest request) {
@@ -52,6 +57,28 @@ public class AuthService {
                 savedUser.getCompany(),
                 savedUser.getProvider().name(),
                 true
+        );
+    }
+
+    public LoginResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_FAILED));
+
+        if (!user.isActive()) {
+            throw new BusinessException(ErrorCode.INACTIVE_USER);
+        }
+
+        if (user.getPasswordHash() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new BusinessException(ErrorCode.LOGIN_FAILED);
+        }
+
+        String accessToken = jwtTokenProvider.createAccessToken(user);
+
+        return new LoginResponse(
+                accessToken,
+                jwtTokenProvider.getTokenType(),
+                jwtTokenProvider.getAccessTokenExpirationSeconds(),
+                LoginUserResponse.from(user)
         );
     }
 }

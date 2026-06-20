@@ -16,6 +16,7 @@ public final class SecurityWhitelist {
             "/api/auth/login",                   // 로그인
             "/api/auth/logout",                  // 로그아웃
             "/api/auth/refresh",                 // 토큰 재발급
+            "/api/auth/reissue",                 // AccessToken 재발급
             "/api/auth/email/send-otp",          // 이메일 OTP 발송
             "/api/auth/email/verify-otp",        // 이메일 OTP 인증
             "/api/auth/password/reset",          // 비밀번호 재설정 요청

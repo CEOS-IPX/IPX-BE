@@ -14,7 +14,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import ceos.ipx.global.security.cookie.CookieUtils;
+import jakarta.servlet.http.HttpServletResponse;
+import ceos.ipx.domain.auth.dto.ReissueResponse;
+import jakarta.servlet.http.HttpServletResponse;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,6 +26,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenService refreshTokenService;
+    private final CookieUtils cookieUtils;
 
     @Transactional
     public SignUpResponse signUp(SignUpRequest request) {
@@ -60,7 +65,7 @@ public class AuthService {
         );
     }
 
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request, HttpServletResponse httpServletResponse) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_FAILED));
 
@@ -73,6 +78,19 @@ public class AuthService {
         }
 
         String accessToken = jwtTokenProvider.createAccessToken(user);
+        String refreshToken = jwtTokenProvider.createRefreshToken(user);
+
+        refreshTokenService.saveRefreshToken(
+                user.getId(),
+                refreshToken,
+                jwtTokenProvider.getRefreshTokenExpirationSeconds()
+        );
+
+        cookieUtils.addRefreshTokenCookie(
+                httpServletResponse,
+                refreshToken,
+                jwtTokenProvider.getRefreshTokenExpirationSeconds()
+        );
 
         return new LoginResponse(
                 accessToken,
@@ -81,4 +99,54 @@ public class AuthService {
                 LoginUserResponse.from(user)
         );
     }
+
+    public ReissueResponse reissue(String refreshToken, HttpServletResponse httpServletResponse) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+        }
+
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        Long userId;
+        try {
+            userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+        } catch (RuntimeException e) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        if (!refreshTokenService.matches(userId, refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (!user.isActive()) {
+            throw new BusinessException(ErrorCode.INACTIVE_USER);
+        }
+
+        String newAccessToken = jwtTokenProvider.createAccessToken(user);
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(user);
+
+        refreshTokenService.saveRefreshToken(
+                user.getId(),
+                newRefreshToken,
+                jwtTokenProvider.getRefreshTokenExpirationSeconds()
+        );
+
+        cookieUtils.addRefreshTokenCookie(
+                httpServletResponse,
+                newRefreshToken,
+                jwtTokenProvider.getRefreshTokenExpirationSeconds()
+        );
+
+        return ReissueResponse.builder()
+                .accessToken(newAccessToken)
+                .tokenType(jwtTokenProvider.getTokenType())
+                .expiresIn(jwtTokenProvider.getAccessTokenExpirationSeconds())
+                .build();
+    }
 }
+

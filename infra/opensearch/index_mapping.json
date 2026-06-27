@@ -12,7 +12,9 @@
       "filter": {
         "synonym_filter": {
           "type": "synonym",
-          "synonyms_path": "analysis/synonyms_patent.txt"
+          "synonyms_path": "analysis/synonyms_patent.txt",
+          "tokenizer": "keyword",
+          "lenient": true
         },
         "nori_posfilter": {
           "type": "nori_part_of_speech",

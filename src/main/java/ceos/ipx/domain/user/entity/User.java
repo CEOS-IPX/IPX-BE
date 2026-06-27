@@ -64,4 +64,13 @@ public class User extends BaseEntity {
         this.providerId = providerId;
         this.isActive = isActive == null ? true : isActive;
     }
+
+    public void updateProfile(String name, String company) {
+        this.name = name;
+        this.company = company;
+    }
+
+    public void deactivate() {
+        this.isActive = false;
+    }
 }

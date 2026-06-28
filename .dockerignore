@@ -1,0 +1,31 @@
+# .dockerignore
+
+# Git 내부 파일
+.git
+.gitignore
+
+# IDE 설정 파일 (개발자 개인 설정)
+.idea/
+*.iml
+.vscode/
+
+# 로컬 그레들 빌드 결과물 (도커 내부에서 어차피 새로 빌드함)
+build/
+.gradle/
+out/
+
+# 로그 파일 및 로컬 환경 변수 (보안 및 용량 관리)
+*.log
+.env
+.env.*
+.DS_Store
+Thumbs.db
+
+# 문서 및 설명서 (서버 구동과 무관)
+*.md
+README.md
+
+# 도커 배포 전용 가이드 파일 (이미지 내부 진입 차단)
+Dockerfile
+docker-compose*.yml
+.dockerignore

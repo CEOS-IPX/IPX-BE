@@ -11,6 +11,15 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 search-server:
   base-url: ${SEARCH_SERVER_URL:http://localhost:8000}
   timeout-seconds: 120

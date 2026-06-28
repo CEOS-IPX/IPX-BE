@@ -79,8 +79,9 @@ public class SecurityConfig {
 
         // 허용 도메인
         config.setAllowedOrigins(List.of(
-                "http://localhost:3000"            // 프론트 개발 환경
-//                "https://?????.com"          // 운영 도메인
+                "http://localhost:3000",            // 프론트 개발 환경
+                "https://ipx-patent.com",          // 운영 도메인
+                "https://www.ipx-patent.com"          // 운영 도메인
         ));
 
         // 허용 HTTP 메서드

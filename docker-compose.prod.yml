@@ -128,6 +128,7 @@ services:
       - OPENSEARCH_JAVA_OPTS=-Xms1536m -Xmx1536m   # 20만 건 기준 1.5g
       - plugins.security.disabled=true
       - bootstrap.memory_lock=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
     volumes:
       - opensearch_data:/usr/share/opensearch/data
       - ./infra/opensearch/synonyms_patent.txt:/usr/share/opensearch/config/analysis/synonyms_patent.txt:ro

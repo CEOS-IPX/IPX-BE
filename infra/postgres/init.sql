@@ -108,7 +108,7 @@ CREATE INDEX IF NOT EXISTS idx_cases_user ON cases (user_id, created_at DESC);
 CREATE TABLE IF NOT EXISTS invention_components (
                                                     id              BIGSERIAL       PRIMARY KEY,
                                                     case_id         BIGINT          NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
-    label           CHAR(1)         NOT NULL,
+    label           VARCHAR(1)         NOT NULL,
     name            VARCHAR(200)    NOT NULL,
     description     TEXT            NOT NULL,
     created_at      TIMESTAMP       NOT NULL DEFAULT NOW(),

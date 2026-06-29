@@ -20,12 +20,12 @@ spring:
 
 logging:
   level:
-    root: WARN
+    root: INFO
     ceos.ipx: INFO
     org.hibernate.SQL: WARN
     org.springframework.security: WARN
-  file:
-    name: /var/log/patent/application.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
 
 springdoc:
   api-docs:

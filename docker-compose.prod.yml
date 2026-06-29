@@ -1,0 +1,191 @@
+# ============================================================
+# 운영 서버용 docker-compose.prod.yml
+# ============================================================
+# 구성: app-spring + app-python + postgres + redis + opensearch + nginx + certbot
+# ============================================================
+
+# ============================================================
+# 운영 서버용 docker-compose.prod.yml
+# 적재 규모: 20만 건 이내 (m7i-flex.large 8GB)
+# ============================================================
+
+# 공통 로깅 설정 (디스크 무한 증가 방지)
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "100m"
+    max-file: "5"
+
+services:
+
+  # ===== Spring 서버 (메인) =====
+  app-spring:
+    image: ghcr.io/${GITHUB_OWNER}/patent-spring:latest
+    container_name: patent-spring
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      app-python:
+        condition: service_started
+    env_file:
+      - .env.prod
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SEARCH_SERVER_URL: http://app-python:8000
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - patent-net
+    logging: *default-logging
+
+  # ===== Python 서버 (검색 전용) =====
+  app-python:
+    image: ghcr.io/${GITHUB_OWNER}/patent-python:latest
+    container_name: patent-python
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    env_file:
+      - .env.prod
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      OPENSEARCH_HOST: opensearch
+      OPENSEARCH_PORT: 9200
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s   # BGE-M3 모델 로드 시간 고려
+    volumes:
+      - huggingface_cache:/app/.cache/huggingface
+    networks:
+      - patent-net
+    logging: *default-logging
+
+  # ===== PostgreSQL + pgvector =====
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: patent-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - patent-net
+    logging: *default-logging
+
+  # ===== Redis (Spring 전용) =====
+  redis:
+    image: redis:7-alpine
+    container_name: patent-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - patent-net
+    logging: *default-logging
+
+  # ===== OpenSearch (Python 전용) =====
+  opensearch:
+    build:
+      context: ./infra/opensearch
+      dockerfile: Dockerfile
+    container_name: patent-opensearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_JAVA_OPTS=-Xms1536m -Xmx1536m   # 20만 건 기준 1.5g
+      - plugins.security.disabled=true
+      - bootstrap.memory_lock=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+      - ./infra/opensearch/synonyms_patent.txt:/usr/share/opensearch/config/analysis/synonyms_patent.txt:ro
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - patent-net
+    logging: *default-logging
+
+  # ===== Nginx 리버스 프록시 =====
+  nginx:
+    image: nginx:alpine
+    container_name: patent-nginx
+    restart: unless-stopped
+    depends_on:
+      app-spring:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    networks:
+      - patent-net
+    logging: *default-logging
+
+  # ===== Certbot (Let's Encrypt SSL 자동 갱신) =====
+  certbot:
+    image: certbot/certbot
+    container_name: patent-certbot
+    restart: unless-stopped
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    logging: *default-logging
+
+volumes:
+  huggingface_cache:
+  postgres_data:
+  redis_data:
+  opensearch_data:
+  certbot_www:
+
+networks:
+  patent-net:
+    driver: bridge

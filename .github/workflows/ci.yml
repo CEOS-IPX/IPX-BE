@@ -6,7 +6,7 @@ name: CI — IPX-BE 빌드 검증
 
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, dev ]
     paths-ignore:
       - '**.md'
       - 'docs/**'

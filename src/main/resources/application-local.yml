@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/patent_db
     username: ${POSTGRES_USER:ipx_patent_user}
-    password: ${POSTGRES_PASSWORD}
+    password: ${POSTGRES_PASSWORD:local_dev_postgres_password}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -43,3 +43,8 @@ springdoc:
   swagger-ui:
     enabled: true
     try-it-out-enabled: true
+
+jwt:
+  secret: ${JWT_SECRET:ipx-local-jwt-secret-key-for-development-1234567890}
+  access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:3600}
+  refresh-token-expiration-seconds: ${JWT_REFRESH_TOKEN_EXPIRATION_SECONDS:1209600}

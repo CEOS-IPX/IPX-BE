@@ -1,6 +1,7 @@
 package ceos.ipx.global.security.jwt;
 
 import ceos.ipx.domain.user.entity.User;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -23,6 +24,9 @@ public class JwtTokenProvider {
     @Value("${jwt.access-token-expiration-seconds}")
     private long accessTokenExpirationSeconds;
 
+    @Value("${jwt.refresh-token-expiration-seconds}")
+    private long refreshTokenExpirationSeconds;
+
     private SecretKey secretKey;
 
     @PostConstruct
@@ -44,11 +48,51 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public String createRefreshToken(User user) {
+        Instant now = Instant.now();
+        Instant expiration = now.plusSeconds(refreshTokenExpirationSeconds);
+
+        return Jwts.builder()
+                .subject(String.valueOf(user.getId()))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiration))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token);
+
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public Long getUserIdFromToken(String token) {
+        String subject = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
+
+        return Long.valueOf(subject);
+    }
+
     public String getTokenType() {
         return TOKEN_TYPE;
     }
 
     public long getAccessTokenExpirationSeconds() {
         return accessTokenExpirationSeconds;
+    }
+
+    public long getRefreshTokenExpirationSeconds() {
+        return refreshTokenExpirationSeconds;
     }
 }

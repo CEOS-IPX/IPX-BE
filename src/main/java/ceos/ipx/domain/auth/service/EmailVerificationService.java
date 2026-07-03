@@ -25,6 +25,7 @@ public class EmailVerificationService {
     private static final int VERIFIED_EXPIRES_IN_SECONDS = 600;
 
     private static final String VERIFIED_KEY_PREFIX = "emailVerification:verified:";
+    private static final String TOKEN_KEY_PREFIX = "emailVerification:token:";
 
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -75,6 +76,12 @@ public class EmailVerificationService {
                 Duration.ofSeconds(VERIFIED_EXPIRES_IN_SECONDS)
         );
 
+        stringRedisTemplate.opsForValue().set(
+                createTokenKey(purpose, verificationToken),
+                email,
+                Duration.ofSeconds(VERIFIED_EXPIRES_IN_SECONDS)
+        );
+
         return verificationToken;
     }
 
@@ -84,6 +91,10 @@ public class EmailVerificationService {
 
     public int getResendAvailableInSeconds() {
         return RESEND_AVAILABLE_IN_SECONDS;
+    }
+
+    public int getVerifiedExpiresInSeconds() {
+        return VERIFIED_EXPIRES_IN_SECONDS;
     }
 
     private String generateCode() {
@@ -102,6 +113,10 @@ public class EmailVerificationService {
 
     private String createVerifiedKey(EmailVerificationPurpose purpose, String email) {
         return VERIFIED_KEY_PREFIX + purpose.getValue() + ":" + email;
+    }
+
+    private String createTokenKey(EmailVerificationPurpose purpose, String verificationToken) {
+        return TOKEN_KEY_PREFIX + purpose.getValue() + ":" + verificationToken;
     }
 
     private String createVerificationToken() {

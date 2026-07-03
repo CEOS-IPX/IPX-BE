@@ -23,6 +23,8 @@ public enum ErrorCode {
     EMAIL_VERIFICATION_CODE_EXPIRED(HttpStatus.GONE, "AU010", "인증 코드가 만료되었거나 존재하지 않습니다."),
     EMAIL_VERIFICATION_CODE_MISMATCH(HttpStatus.BAD_REQUEST, "AU011", "인증 코드가 일치하지 않습니다."),
     SOCIAL_ACCOUNT_PASSWORD_RESET_NOT_ALLOWED(HttpStatus.FORBIDDEN, "AU012", "소셜 로그인 계정은 비밀번호를 재설정할 수 없습니다."),
+    INVALID_EMAIL_VERIFICATION_PURPOSE(HttpStatus.BAD_REQUEST, "AU013", "잘못된 이메일 인증 목적입니다."),
+    PASSWORD_RESET_TOKEN_EXPIRED(HttpStatus.GONE, "AU014", "비밀번호 재설정 토큰이 만료되었거나 존재하지 않습니다."),
 
     UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED, "SC001", "인증이 필요합니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "SC002", "해당 요청에 권한이 없습니다.");

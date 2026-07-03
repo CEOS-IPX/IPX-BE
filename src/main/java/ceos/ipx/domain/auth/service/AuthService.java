@@ -17,6 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ceos.ipx.domain.auth.dto.PasswordResetRequest;
+import ceos.ipx.domain.user.entity.UserProvider;
+import java.util.regex.Pattern;
+
 
 @Service
 @RequiredArgsConstructor
@@ -25,12 +29,16 @@ public class AuthService {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
+    private static final Pattern PASSWORD_PATTERN =
+            Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$");
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final AccessTokenBlacklistService accessTokenBlacklistService;
     private final CookieUtils cookieUtils;
+    private final EmailVerificationService emailVerificationService;
 
     @Transactional
     public SignUpResponse signUp(SignUpRequest request) {
@@ -150,6 +158,50 @@ public class AuthService {
                 .tokenType(jwtTokenProvider.getTokenType())
                 .expiresIn(jwtTokenProvider.getAccessTokenExpirationSeconds())
                 .build();
+    }
+
+    @Transactional
+    public void resetPassword(PasswordResetRequest request) {
+        String email = emailVerificationService.getEmailByPasswordResetToken(request.getVerificationToken());
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        validatePasswordResetUser(user);
+        validateNewPassword(request.getNewPassword(), request.getNewPasswordConfirm(), user);
+
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        user.updatePassword(encodedPassword);
+
+        emailVerificationService.deletePasswordResetVerification(request.getVerificationToken(), email);
+    }
+
+    private void validatePasswordResetUser(User user) {
+        if (!user.isActive()) {
+            throw new BusinessException(ErrorCode.INACTIVE_USER);
+        }
+
+        if (user.getProvider() != UserProvider.LOCAL) {
+            throw new BusinessException(ErrorCode.SOCIAL_ACCOUNT_PASSWORD_RESET_NOT_ALLOWED);
+        }
+
+        if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
+            throw new BusinessException(ErrorCode.SOCIAL_ACCOUNT_PASSWORD_RESET_NOT_ALLOWED);
+        }
+    }
+
+    private void validateNewPassword(String newPassword, String newPasswordConfirm, User user) {
+        if (!newPassword.equals(newPasswordConfirm)) {
+            throw new BusinessException(ErrorCode.PASSWORD_CONFIRM_MISMATCH);
+        }
+
+        if (!PASSWORD_PATTERN.matcher(newPassword).matches()) {
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD_FORMAT);
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new BusinessException(ErrorCode.SAME_AS_OLD_PASSWORD);
+        }
     }
 
     @Transactional

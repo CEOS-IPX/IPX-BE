@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ceos.ipx.domain.auth.dto.PasswordResetRequest;
 
 @Tag(name = "Auth API", description = "인증/인가 관련 API")
 @RestController
@@ -84,6 +85,24 @@ public class AuthController {
         ReissueResponse response = authService.reissue(refreshToken, httpServletResponse);
 
         return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @Operation(summary = "새 비밀번호 설정", description = "비밀번호 재설정 인증 코드 검증 후 발급된 verificationToken을 검증하여 새 비밀번호로 변경합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "비밀번호 재설정 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력값 검증 실패 또는 비밀번호 형식 오류 또는 비밀번호 확인 불일치"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "비활성화 계정 또는 소셜 로그인 계정"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "410", description = "비밀번호 재설정 토큰 만료 또는 존재하지 않음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    @PostMapping("/password/reset")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody PasswordResetRequest request
+    ) {
+        authService.resetPassword(request);
+
+        return ResponseEntity.ok(ApiResponse.<Void>ok(null));
     }
 
     @Operation(summary = "로그아웃", description = "현재 사용자를 로그아웃 처리하고 RefreshToken Cookie를 삭제하며 AccessToken을 블랙리스트 처리합니다.")

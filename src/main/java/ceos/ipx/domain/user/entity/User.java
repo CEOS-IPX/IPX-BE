@@ -73,4 +73,8 @@ public class User extends BaseEntity {
     public void deactivate() {
         this.isActive = false;
     }
+
+    public void updatePassword(String encodedPassword) {
+        this.passwordHash = encodedPassword;
+    }
 }

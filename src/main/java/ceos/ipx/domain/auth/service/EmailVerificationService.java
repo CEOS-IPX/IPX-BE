@@ -103,6 +103,23 @@ public class EmailVerificationService {
         return String.format("%06d", number);
     }
 
+    public String getEmailByPasswordResetToken(String verificationToken) {
+        String tokenKey = createTokenKey(EmailVerificationPurpose.PASSWORD_RESET, verificationToken);
+        String email = stringRedisTemplate.opsForValue().get(tokenKey);
+
+        if (email == null) {
+            throw new BusinessException(ErrorCode.PASSWORD_RESET_TOKEN_EXPIRED);
+        }
+
+        return email;
+    }
+
+    public void deletePasswordResetVerification(String verificationToken, String email) {
+        stringRedisTemplate.delete(createTokenKey(EmailVerificationPurpose.PASSWORD_RESET, verificationToken));
+        stringRedisTemplate.delete(createVerifiedKey(EmailVerificationPurpose.PASSWORD_RESET, email));
+        stringRedisTemplate.delete(createCodeKey(EmailVerificationPurpose.PASSWORD_RESET, email));
+    }
+
     private String createCodeKey(EmailVerificationPurpose purpose, String email) {
         return CODE_KEY_PREFIX + purpose.getValue() + ":" + email;
     }

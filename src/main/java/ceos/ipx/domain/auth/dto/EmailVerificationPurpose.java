@@ -30,7 +30,7 @@ public enum EmailVerificationPurpose {
                                 || purpose.name().equalsIgnoreCase(value)
                 )
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_EMAIL_VERIFICATION_PURPOSE));
     }
 
     @JsonValue

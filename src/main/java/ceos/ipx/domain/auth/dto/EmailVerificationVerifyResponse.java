@@ -11,4 +11,5 @@ public class EmailVerificationVerifyResponse {
     private EmailVerificationPurpose purpose;
     private boolean verified;
     private String verificationToken;
+    private int expiresIn;
 }

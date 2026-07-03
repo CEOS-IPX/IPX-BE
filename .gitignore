@@ -39,3 +39,6 @@ out/
 ### environment files ###
 .env
 .env.prod
+
+### docker test ###
+docker-compose.override.yml

@@ -2,6 +2,7 @@ package ceos.ipx.domain.auth.controller;
 
 import ceos.ipx.domain.auth.dto.LoginRequest;
 import ceos.ipx.domain.auth.dto.LoginResponse;
+import ceos.ipx.domain.auth.dto.ReissueResponse;
 import ceos.ipx.domain.auth.service.AuthService;
 import ceos.ipx.domain.user.dto.SignUpRequest;
 import ceos.ipx.domain.user.dto.SignUpResponse;
@@ -9,18 +10,18 @@ import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import jakarta.servlet.http.HttpServletResponse;
-import ceos.ipx.domain.auth.dto.ReissueResponse;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.bind.annotation.CookieValue;
 
 @Tag(name = "Auth API", description = "인증/인가 관련 API")
 @RestController
@@ -83,5 +84,22 @@ public class AuthController {
         ReissueResponse response = authService.reissue(refreshToken, httpServletResponse);
 
         return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @Operation(summary = "로그아웃", description = "현재 사용자를 로그아웃 처리하고 RefreshToken Cookie를 삭제하며 AccessToken을 블랙리스트 처리합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "AccessToken 누락 또는 유효하지 않음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorizationHeader,
+            @CookieValue(name = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse httpServletResponse
+    ) {
+        authService.logout(authorizationHeader, refreshToken, httpServletResponse);
+
+        return ResponseEntity.ok(ApiResponse.<Void>ok(null));
     }
 }

@@ -14,7 +14,7 @@ public final class SecurityWhitelist {
             // 인증 관련 API
             "/api/auth/signup",                  // 회원가입
             "/api/auth/login",                   // 로그인
-            "/api/auth/logout",                  // 로그아웃
+            // "/api/auth/logout",                  // 로그아웃
             "/api/auth/refresh",                 // 토큰 재발급
             "/api/auth/reissue",                 // AccessToken 재발급
             "/api/auth/email/send-otp",          // 이메일 OTP 발송
@@ -50,7 +50,11 @@ public final class SecurityWhitelist {
             // 검색 (로그인한 사용자만 사용 가능하도록)
             "/api/search/**",                    // 특허 검색
 
+
+            // 인증 관련
+            "/api/auth/logout",                  // 로그아웃
+
             // 추가 인증 필요 작업
-            "/api/auth/me"                       // 내 정보 조회
+            "/api/auth/me",                      // 내 정보 조회                     // 내 정보 조회
     };
 }

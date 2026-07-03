@@ -84,6 +84,17 @@ public class JwtTokenProvider {
         return Long.valueOf(subject);
     }
 
+    public long getRemainingExpirationMillis(String token) {
+        Date expiration = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getExpiration();
+
+        return expiration.getTime() - System.currentTimeMillis();
+    }
+
     public String getTokenType() {
         return TOKEN_TYPE;
     }

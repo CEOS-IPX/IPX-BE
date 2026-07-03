@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import ceos.ipx.domain.auth.service.AccessTokenBlacklistService;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -24,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final AccessTokenBlacklistService accessTokenBlacklistService;
 
     @Override
     protected void doFilterInternal(
@@ -36,7 +38,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authorizationHeader != null && authorizationHeader.startsWith(BEARER_PREFIX)) {
             String accessToken = authorizationHeader.substring(BEARER_PREFIX.length());
 
-            if (jwtTokenProvider.validateToken(accessToken)) {
+            if (!accessTokenBlacklistService.isBlacklisted(accessToken)
+                    && jwtTokenProvider.validateToken(accessToken)) {
                 Long userId = jwtTokenProvider.getUserIdFromToken(accessToken);
 
                 userRepository.findById(userId)

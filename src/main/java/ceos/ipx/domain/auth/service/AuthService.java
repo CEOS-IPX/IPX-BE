@@ -3,30 +3,33 @@ package ceos.ipx.domain.auth.service;
 import ceos.ipx.domain.auth.dto.LoginRequest;
 import ceos.ipx.domain.auth.dto.LoginResponse;
 import ceos.ipx.domain.auth.dto.LoginUserResponse;
+import ceos.ipx.domain.auth.dto.ReissueResponse;
 import ceos.ipx.domain.user.dto.SignUpRequest;
 import ceos.ipx.domain.user.dto.SignUpResponse;
 import ceos.ipx.domain.user.entity.User;
 import ceos.ipx.domain.user.repository.UserRepository;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
+import ceos.ipx.global.security.cookie.CookieUtils;
 import ceos.ipx.global.security.jwt.JwtTokenProvider;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ceos.ipx.global.security.cookie.CookieUtils;
-import jakarta.servlet.http.HttpServletResponse;
-import ceos.ipx.domain.auth.dto.ReissueResponse;
-import jakarta.servlet.http.HttpServletResponse;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AuthService {
 
+    private static final String BEARER_PREFIX = "Bearer ";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
+    private final AccessTokenBlacklistService accessTokenBlacklistService;
     private final CookieUtils cookieUtils;
 
     @Transactional
@@ -148,5 +151,53 @@ public class AuthService {
                 .expiresIn(jwtTokenProvider.getAccessTokenExpirationSeconds())
                 .build();
     }
-}
 
+    @Transactional
+    public void logout(
+            String authorizationHeader,
+            String refreshToken,
+            HttpServletResponse httpServletResponse
+    ) {
+        String accessToken = extractAccessToken(authorizationHeader);
+
+        if (accessTokenBlacklistService.isBlacklisted(accessToken)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_USER);
+        }
+
+        if (!jwtTokenProvider.validateToken(accessToken)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_USER);
+        }
+
+        Long userId;
+        try {
+            userId = jwtTokenProvider.getUserIdFromToken(accessToken);
+        } catch (RuntimeException e) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_USER);
+        }
+
+        refreshTokenService.deleteRefreshToken(userId);
+
+        long remainingExpirationMillis = jwtTokenProvider.getRemainingExpirationMillis(accessToken);
+        accessTokenBlacklistService.blacklist(accessToken, remainingExpirationMillis);
+
+        cookieUtils.deleteRefreshTokenCookie(httpServletResponse);
+    }
+
+    private String extractAccessToken(String authorizationHeader) {
+        if (authorizationHeader == null || authorizationHeader.isBlank()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_USER);
+        }
+
+        if (!authorizationHeader.startsWith(BEARER_PREFIX)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_USER);
+        }
+
+        String accessToken = authorizationHeader.substring(BEARER_PREFIX.length());
+
+        if (accessToken.isBlank()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_USER);
+        }
+
+        return accessToken;
+    }
+}

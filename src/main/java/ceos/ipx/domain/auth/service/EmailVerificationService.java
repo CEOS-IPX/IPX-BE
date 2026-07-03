@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +21,10 @@ public class EmailVerificationService {
 
     private static final String CODE_KEY_PREFIX = "emailVerification:code:";
     private static final String COOLDOWN_KEY_PREFIX = "emailVerification:cooldown:";
+
+    private static final int VERIFIED_EXPIRES_IN_SECONDS = 600;
+
+    private static final String VERIFIED_KEY_PREFIX = "emailVerification:verified:";
 
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -48,6 +53,31 @@ public class EmailVerificationService {
         return code;
     }
 
+    public String verifyVerificationCode(EmailVerificationPurpose purpose, String email, String code) {
+        String codeKey = createCodeKey(purpose, email);
+        String savedCode = stringRedisTemplate.opsForValue().get(codeKey);
+
+        if (savedCode == null) {
+            throw new BusinessException(ErrorCode.EMAIL_VERIFICATION_CODE_EXPIRED);
+        }
+
+        if (!savedCode.equals(code)) {
+            throw new BusinessException(ErrorCode.EMAIL_VERIFICATION_CODE_MISMATCH);
+        }
+
+        stringRedisTemplate.delete(codeKey);
+
+        String verificationToken = createVerificationToken();
+
+        stringRedisTemplate.opsForValue().set(
+                createVerifiedKey(purpose, email),
+                verificationToken,
+                Duration.ofSeconds(VERIFIED_EXPIRES_IN_SECONDS)
+        );
+
+        return verificationToken;
+    }
+
     public int getCodeExpiresInSeconds() {
         return CODE_EXPIRES_IN_SECONDS;
     }
@@ -68,5 +98,13 @@ public class EmailVerificationService {
 
     private String createCooldownKey(EmailVerificationPurpose purpose, String email) {
         return COOLDOWN_KEY_PREFIX + purpose.getValue() + ":" + email;
+    }
+
+    private String createVerifiedKey(EmailVerificationPurpose purpose, String email) {
+        return VERIFIED_KEY_PREFIX + purpose.getValue() + ":" + email;
+    }
+
+    private String createVerificationToken() {
+        return UUID.randomUUID().toString();
     }
 }

@@ -20,6 +20,9 @@ public enum ErrorCode {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "AU007", "사용자를 찾을 수 없습니다."),
     EMAIL_VERIFICATION_RESEND_TOO_EARLY(HttpStatus.TOO_MANY_REQUESTS, "AU008", "인증 코드는 잠시 후 다시 요청할 수 있습니다."),
     EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AU009", "이메일 발송에 실패했습니다."),
+    EMAIL_VERIFICATION_CODE_EXPIRED(HttpStatus.GONE, "AU010", "인증 코드가 만료되었거나 존재하지 않습니다."),
+    EMAIL_VERIFICATION_CODE_MISMATCH(HttpStatus.BAD_REQUEST, "AU011", "인증 코드가 일치하지 않습니다."),
+
     UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED, "SC001", "인증이 필요합니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "SC002", "해당 요청에 권한이 없습니다.");
 

@@ -22,6 +22,7 @@ public final class SecurityWhitelist {
             "/api/auth/password/reset",          // 비밀번호 재설정 요청
             "/api/auth/password/reset/verify",   // 비밀번호 재설정 확인
             "/api/auth/email/send",
+            "/api/auth/email/verify",
 
             // OAuth 콜백 (Google 로그인)
             "/oauth2/**",

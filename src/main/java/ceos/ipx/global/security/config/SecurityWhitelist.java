@@ -21,6 +21,7 @@ public final class SecurityWhitelist {
             "/api/auth/email/verify-otp",        // 이메일 OTP 인증
             "/api/auth/password/reset",          // 비밀번호 재설정 요청
             "/api/auth/password/reset/verify",   // 비밀번호 재설정 확인
+            "/api/auth/email/send",
 
             // OAuth 콜백 (Google 로그인)
             "/oauth2/**",

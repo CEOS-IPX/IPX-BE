@@ -20,8 +20,15 @@ public enum EmailVerificationPurpose {
 
     @JsonCreator
     public static EmailVerificationPurpose from(String value) {
+        if (value == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
         return Arrays.stream(values())
-                .filter(purpose -> purpose.value.equals(value))
+                .filter(purpose ->
+                        purpose.value.equalsIgnoreCase(value)
+                                || purpose.name().equalsIgnoreCase(value)
+                )
                 .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
     }

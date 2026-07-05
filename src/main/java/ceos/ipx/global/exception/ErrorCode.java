@@ -27,6 +27,9 @@ public enum ErrorCode {
     PASSWORD_RESET_TOKEN_EXPIRED(HttpStatus.GONE, "AU014", "비밀번호 재설정 토큰이 만료되었거나 존재하지 않습니다."),
     INVALID_PASSWORD_FORMAT(HttpStatus.BAD_REQUEST, "AU015", "비밀번호 형식이 올바르지 않습니다."),
     SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "AU016", "기존 비밀번호와 동일한 비밀번호는 사용할 수 없습니다."),
+    INVALID_OAUTH_REDIRECT_URI(HttpStatus.BAD_REQUEST, "AU017", "허용되지 않은 OAuth redirectUri입니다."),
+    OAUTH_URL_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AU018", "OAuth URL 생성에 실패했습니다."),
+    INVALID_OAUTH_STATE(HttpStatus.BAD_REQUEST, "AU019", "유효하지 않은 OAuth state입니다."),
 
     UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED, "SC001", "인증이 필요합니다."),    ACCESS_DENIED(HttpStatus.FORBIDDEN, "SC002", "해당 요청에 권한이 없습니다.");
 

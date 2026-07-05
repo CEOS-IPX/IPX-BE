@@ -24,6 +24,9 @@ public final class SecurityWhitelist {
             "/api/auth/email/send",
             "/api/auth/email/verify",
 
+            // Google OAuth
+            "/api/auth/oauth/**",
+
             // OAuth 콜백 (Google 로그인)
             "/oauth2/**",
             "/login/oauth2/**",
@@ -49,7 +52,6 @@ public final class SecurityWhitelist {
 
             // 검색 (로그인한 사용자만 사용 가능하도록)
             "/api/search/**",                    // 특허 검색
-
 
             // 인증 관련
             "/api/auth/logout",                  // 로그아웃

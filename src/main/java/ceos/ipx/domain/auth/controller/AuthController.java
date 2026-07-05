@@ -23,6 +23,12 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ceos.ipx.domain.auth.dto.PasswordResetRequest;
+import ceos.ipx.domain.auth.service.GoogleOAuthService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.net.URI;
+
 
 @Tag(name = "Auth API", description = "인증/인가 관련 API")
 @RestController
@@ -31,6 +37,7 @@ import ceos.ipx.domain.auth.dto.PasswordResetRequest;
 public class AuthController {
 
     private final AuthService authService;
+    private final GoogleOAuthService googleOAuthService;
 
     @Operation(summary = "일반 회원가입", description = "이메일 인증이 완료된 사용자의 정보를 받아 계정을 생성합니다.")
     @ApiResponses({
@@ -120,5 +127,42 @@ public class AuthController {
         authService.logout(authorizationHeader, refreshToken, httpServletResponse);
 
         return ResponseEntity.ok(ApiResponse.<Void>ok(null));
+    }
+
+    @Operation(summary = "Google 로그인 시작", description = "Google OAuth 인증 페이지로 Redirect합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "302", description = "Google OAuth 로그인 페이지로 이동"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "허용되지 않은 OAuth redirectUri"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "OAuth URL 생성 실패")
+    })
+    @GetMapping("/oauth/google")
+    public ResponseEntity<Void> redirectToGoogleOAuth(
+            @RequestParam(value = "redirectUri", required = false) String redirectUri
+    ) {
+        String googleAuthUrl = googleOAuthService.generateGoogleAuthUrl(redirectUri);
+
+        return ResponseEntity
+                .status(HttpStatus.FOUND)
+                .location(URI.create(googleAuthUrl))
+                .build();
+    }
+
+    @Operation(summary = "Google OAuth Callback", description = "Google OAuth 인증 완료 후 code와 state를 받아 FE 콜백 화면으로 Redirect합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "302", description = "FE OAuth Callback 화면으로 이동"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력값 오류 또는 유효하지 않은 OAuth state"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    @GetMapping("/oauth/google/callback")
+    public ResponseEntity<Void> handleGoogleOAuthCallback(
+            @RequestParam(value = "code", required = false) String code,
+            @RequestParam(value = "state", required = false) String state
+    ) {
+        String frontendCallbackUrl = googleOAuthService.buildFrontendCallbackUrl(code, state);
+
+        return ResponseEntity
+                .status(HttpStatus.FOUND)
+                .location(URI.create(frontendCallbackUrl))
+                .build();
     }
 }

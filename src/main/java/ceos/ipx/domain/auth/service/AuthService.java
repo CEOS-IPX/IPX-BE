@@ -25,6 +25,7 @@ import ceos.ipx.domain.auth.dto.GoogleTokenResponse;
 import ceos.ipx.domain.auth.dto.GoogleUserInfoResponse;
 import ceos.ipx.domain.auth.dto.OAuthSignupRequiredResponse;
 import ceos.ipx.domain.auth.dto.OAuthTokenResponse;
+import ceos.ipx.domain.auth.dto.GoogleOAuthSignupRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -128,6 +129,55 @@ public class AuthService {
         return userRepository.findByEmail(googleUserInfo.email())
                 .map(user -> handleExistingGoogleOAuthUser(user, httpServletResponse))
                 .orElseGet(() -> handleNewGoogleOAuthUser(googleUserInfo));
+    }
+
+    @Transactional
+    public LoginResponse googleOAuthSignup(
+            GoogleOAuthSignupRequest request,
+            HttpServletResponse httpServletResponse
+    ) {
+        GoogleUserInfoResponse googleUserInfo =
+                oauthSignupTokenService.getGoogleUserInfo(request.oauthSignupToken());
+
+        if (userRepository.existsByEmail(googleUserInfo.email())) {
+            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+
+        User user = User.builder()
+                .email(googleUserInfo.email())
+                .passwordHash(null)
+                .name(googleUserInfo.name())
+                .company(request.company())
+                .provider(UserProvider.GOOGLE)
+                .providerId(googleUserInfo.id())
+                .isActive(true)
+                .build();
+
+        User savedUser = userRepository.save(user);
+
+        oauthSignupTokenService.deleteGoogleUserInfo(request.oauthSignupToken());
+
+        String accessToken = jwtTokenProvider.createAccessToken(savedUser);
+        String refreshToken = jwtTokenProvider.createRefreshToken(savedUser);
+
+        refreshTokenService.saveRefreshToken(
+                savedUser.getId(),
+                refreshToken,
+                jwtTokenProvider.getRefreshTokenExpirationSeconds()
+        );
+
+        cookieUtils.addRefreshTokenCookie(
+                httpServletResponse,
+                refreshToken,
+                jwtTokenProvider.getRefreshTokenExpirationSeconds()
+        );
+
+        return new LoginResponse(
+                accessToken,
+                jwtTokenProvider.getTokenType(),
+                jwtTokenProvider.getAccessTokenExpirationSeconds(),
+                LoginUserResponse.from(savedUser)
+        );
     }
 
     public ReissueResponse reissue(String refreshToken, HttpServletResponse httpServletResponse) {

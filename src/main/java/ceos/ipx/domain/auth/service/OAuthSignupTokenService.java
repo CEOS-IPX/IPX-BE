@@ -38,6 +38,26 @@ public class OAuthSignupTokenService {
         }
     }
 
+    public GoogleUserInfoResponse getGoogleUserInfo(String token) {
+        String key = createKey(token);
+        String value = stringRedisTemplate.opsForValue().get(key);
+
+        if (value == null) {
+            throw new BusinessException(ErrorCode.OAUTH_SIGNUP_TOKEN_EXPIRED);
+        }
+
+        try {
+            return objectMapper.readValue(value, GoogleUserInfoResponse.class);
+        } catch (JsonProcessingException e) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public void deleteGoogleUserInfo(String token) {
+        String key = createKey(token);
+        stringRedisTemplate.delete(key);
+    }
+
     private String createKey(String token) {
         return OAUTH_SIGNUP_TOKEN_KEY_PREFIX + token;
     }

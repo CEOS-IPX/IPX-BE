@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import ceos.ipx.domain.auth.dto.GoogleOAuthTokenRequest;
 import ceos.ipx.domain.auth.dto.OAuthTokenResponse;
+import ceos.ipx.domain.auth.dto.GoogleOAuthSignupRequest;
 
 import java.net.URI;
 
@@ -186,6 +187,27 @@ public class AuthController {
             HttpServletResponse httpServletResponse
     ) {
         OAuthTokenResponse response = authService.exchangeGoogleOAuthToken(request, httpServletResponse);
+
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @Operation(
+            summary = "Google 추가 회원가입",
+            description = "Google OAuth 인증은 완료됐지만 아직 서비스 회원으로 저장되지 않은 사용자의 oauthSignupToken을 검증하고 추가 정보를 받아 최종 회원가입 및 로그인 처리를 합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Google 추가 회원가입 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력값 검증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이미 사용 중인 이메일"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "410", description = "OAuth 회원가입 토큰 만료 또는 존재하지 않음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    @PostMapping("/oauth/google/signup")
+    public ResponseEntity<ApiResponse<LoginResponse>> googleOAuthSignup(
+            @Valid @RequestBody GoogleOAuthSignupRequest request,
+            HttpServletResponse httpServletResponse
+    ) {
+        LoginResponse response = authService.googleOAuthSignup(request, httpServletResponse);
 
         return ResponseEntity.ok(ApiResponse.ok(response));
     }

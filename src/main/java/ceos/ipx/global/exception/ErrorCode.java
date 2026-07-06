@@ -33,7 +33,7 @@ public enum ErrorCode {
     OAUTH_TOKEN_EXCHANGE_FAILED(HttpStatus.BAD_GATEWAY, "AU020", "Google 토큰 교환에 실패했습니다."),
     OAUTH_USER_INFO_FAILED(HttpStatus.BAD_GATEWAY, "AU021", "Google 사용자 정보 조회에 실패했습니다."),
     SOCIAL_LOGIN_NOT_ALLOWED(HttpStatus.CONFLICT, "AU022", "일반 로그인으로 가입된 이메일입니다."),
-    SOCIAL_ACCOUNT_LOGIN_NOT_ALLOWED(HttpStatus.FORBIDDEN, "AU023", "소셜 로그인 계정은 일반 로그인을 사용할 수 없습니다."),
+    OAUTH_SIGNUP_TOKEN_EXPIRED(HttpStatus.GONE, "AU023", "OAuth 회원가입 토큰이 만료되었거나 존재하지 않습니다."),
 
     UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED, "SC001", "인증이 필요합니다."),    ACCESS_DENIED(HttpStatus.FORBIDDEN, "SC002", "해당 요청에 권한이 없습니다.");
 

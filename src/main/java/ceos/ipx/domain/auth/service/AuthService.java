@@ -20,7 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 import ceos.ipx.domain.auth.dto.PasswordResetRequest;
 import ceos.ipx.domain.user.entity.UserProvider;
 import java.util.regex.Pattern;
-
+import ceos.ipx.domain.auth.dto.GoogleOAuthTokenRequest;
+import ceos.ipx.domain.auth.dto.GoogleTokenResponse;
+import ceos.ipx.domain.auth.dto.GoogleUserInfoResponse;
+import ceos.ipx.domain.auth.dto.OAuthSignupRequiredResponse;
+import ceos.ipx.domain.auth.dto.OAuthTokenResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +43,8 @@ public class AuthService {
     private final AccessTokenBlacklistService accessTokenBlacklistService;
     private final CookieUtils cookieUtils;
     private final EmailVerificationService emailVerificationService;
+    private final GoogleOAuthClient googleOAuthClient;
+    private final OAuthSignupTokenService oauthSignupTokenService;
 
     @Transactional
     public SignUpResponse signUp(SignUpRequest request) {
@@ -111,6 +117,19 @@ public class AuthService {
         );
     }
 
+    @Transactional
+    public OAuthTokenResponse exchangeGoogleOAuthToken(
+            GoogleOAuthTokenRequest request,
+            HttpServletResponse httpServletResponse
+    ) {
+        GoogleTokenResponse googleTokenResponse = googleOAuthClient.exchangeCodeForToken(request.code());
+        GoogleUserInfoResponse googleUserInfo = googleOAuthClient.getUserInfo(googleTokenResponse.accessToken());
+
+        return userRepository.findByEmail(googleUserInfo.email())
+                .map(user -> handleExistingGoogleOAuthUser(user, httpServletResponse))
+                .orElseGet(() -> handleNewGoogleOAuthUser(googleUserInfo));
+    }
+
     public ReissueResponse reissue(String refreshToken, HttpServletResponse httpServletResponse) {
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
@@ -176,6 +195,47 @@ public class AuthService {
         emailVerificationService.deletePasswordResetVerification(request.getVerificationToken(), email);
     }
 
+    private OAuthTokenResponse handleExistingGoogleOAuthUser(
+            User user,
+            HttpServletResponse httpServletResponse
+    ) {
+        if (!user.isActive()) {
+            throw new BusinessException(ErrorCode.INACTIVE_USER);
+        }
+
+        if (user.getProvider() == UserProvider.LOCAL) {
+            throw new BusinessException(ErrorCode.SOCIAL_LOGIN_NOT_ALLOWED);
+        }
+
+        if (user.getProvider() != UserProvider.GOOGLE) {
+            throw new BusinessException(ErrorCode.LOGIN_FAILED);
+        }
+
+        String accessToken = jwtTokenProvider.createAccessToken(user);
+        String refreshToken = jwtTokenProvider.createRefreshToken(user);
+
+        refreshTokenService.saveRefreshToken(
+                user.getId(),
+                refreshToken,
+                jwtTokenProvider.getRefreshTokenExpirationSeconds()
+        );
+
+        cookieUtils.addRefreshTokenCookie(
+                httpServletResponse,
+                refreshToken,
+                jwtTokenProvider.getRefreshTokenExpirationSeconds()
+        );
+
+        LoginResponse loginResponse = new LoginResponse(
+                accessToken,
+                jwtTokenProvider.getTokenType(),
+                jwtTokenProvider.getAccessTokenExpirationSeconds(),
+                LoginUserResponse.from(user)
+        );
+
+        return OAuthTokenResponse.loginSuccess(loginResponse);
+    }
+
     private void validatePasswordResetUser(User user) {
         if (!user.isActive()) {
             throw new BusinessException(ErrorCode.INACTIVE_USER);
@@ -202,6 +262,19 @@ public class AuthService {
         if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
             throw new BusinessException(ErrorCode.SAME_AS_OLD_PASSWORD);
         }
+    }
+
+    private OAuthTokenResponse handleNewGoogleOAuthUser(GoogleUserInfoResponse googleUserInfo) {
+        String oauthSignupToken = oauthSignupTokenService.saveGoogleUserInfo(googleUserInfo);
+
+        OAuthSignupRequiredResponse signupResponse = new OAuthSignupRequiredResponse(
+                oauthSignupToken,
+                googleUserInfo.email(),
+                googleUserInfo.name(),
+                UserProvider.GOOGLE.name()
+        );
+
+        return OAuthTokenResponse.needSignup(signupResponse);
     }
 
     @Transactional

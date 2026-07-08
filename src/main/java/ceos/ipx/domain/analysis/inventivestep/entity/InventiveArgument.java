@@ -14,9 +14,12 @@ import java.util.Map;
 
 @Entity
 @Getter
-@Table(name = "inventive_arguments",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"analysis_id", "argument_type"}),
-        indexes = @Index(name = "idx_ia_analysis", columnList = "analysis_id"))
+@Table(
+        name = "inventive_arguments",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_ia_analysis_type", columnNames = {"analysis_id", "argument_type"})
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InventiveArgument extends BaseEntity {
 

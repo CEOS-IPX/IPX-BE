@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS users (
     company         VARCHAR(200),
     provider        VARCHAR(20)     NOT NULL DEFAULT 'LOCAL',
     provider_id     VARCHAR(255),
-    is_active       BOOLEAN         NOT NULL DEFAULT TRUE,
+    active          BOOLEAN         NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
 
@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS novelty_comparisons (
     analysis_id         BIGINT          NOT NULL REFERENCES novelty_analyses(id) ON DELETE CASCADE,
     component_id        BIGINT          NOT NULL REFERENCES invention_components(id) ON DELETE CASCADE,
     disclosure_text     TEXT            NOT NULL,
-    comparison_result   VARCHAR(10)     NOT NULL,
+    comparison_result   VARCHAR(20)     NOT NULL,
 
     UNIQUE(analysis_id, component_id)
 );

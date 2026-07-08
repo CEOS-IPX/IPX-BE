@@ -47,8 +47,12 @@ public class Case extends BaseEntity {
     private String description;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "user_input_ipc", columnDefinition = "TEXT[]")
+    @Column(name = "user_input_ipc", columnDefinition = "TEXT[]", nullable = false)
     private List<String> userInputIpc = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(columnDefinition = "TEXT[]", nullable = false)
+    private List<String> keywords = new ArrayList<>();
 
     @Column(name = "search_completed_at")
     private LocalDateTime searchCompletedAt;
@@ -64,7 +68,7 @@ public class Case extends BaseEntity {
 
     @Builder
     private Case(User user, String title, String applicantName, String inventorName,
-                 String technicalField, String description, List<String> userInputIpc) {
+                 String technicalField, String description, List<String> userInputIpc, List<String> keywords) {
         this.user = user;
         this.title = title;
         this.applicantName = applicantName;
@@ -72,6 +76,7 @@ public class Case extends BaseEntity {
         this.technicalField = technicalField;
         this.description = description;
         this.userInputIpc = userInputIpc != null ? userInputIpc : new ArrayList<>();
+        this.keywords = keywords != null ? keywords : new ArrayList<>();
     }
 
     // ===== 단계 완료 처리 =====
@@ -97,17 +102,6 @@ public class Case extends BaseEntity {
         this.noveltyCompletedAt = null;
         this.inventiveCompletedAt = null;
         this.reportCompletedAt = null;
-    }
-
-    // ===== 정보 수정 =====
-    public void updateInfo(String title, String applicantName, String inventorName,
-                           String technicalField, String description, List<String> userInputIpc) {
-        this.title = title;
-        this.applicantName = applicantName;
-        this.inventorName = inventorName;
-        this.technicalField = technicalField;
-        this.description = description;
-        this.userInputIpc = userInputIpc != null ? userInputIpc : new ArrayList<>();
     }
 
     // ===== 리포트 생성 가능 여부 =====

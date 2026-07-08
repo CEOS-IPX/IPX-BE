@@ -1,7 +1,17 @@
 package ceos.ipx.domain.analysis.novelty.entity;
 
+import lombok.Getter;
+
+@Getter
 public enum NoveltyVerdict {
-    SAFE,      // 신규성 충족
-    RISKY,     // 위험
-    BLOCKED    // 단일 문헌에 모든 구성 존재
+    VERY_HIGH("매우 높음"),
+    HIGH("높음"),
+    MEDIUM("보통"),
+    LOW("낮음");
+
+    private final String label;
+
+    NoveltyVerdict(String label) {
+        this.label = label;
+    }
 }

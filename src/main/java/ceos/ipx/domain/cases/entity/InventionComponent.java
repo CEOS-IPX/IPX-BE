@@ -12,9 +12,12 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Table(name = "invention_components",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"case_id", "label"}),
-        indexes = @Index(name = "idx_ic_case", columnList = "case_id"))
+@Table(
+        name = "invention_components",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_ic_case_display_order", columnNames = {"case_id", "display_order"})
+        }
+)
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InventionComponent {
@@ -27,25 +30,25 @@ public class InventionComponent {
     @JoinColumn(name = "case_id", nullable = false)
     private Case caseEntity;
 
-    @Column(nullable = false, length = 1)
-    private String label;   // 'A', 'B', 'C', 'D'
-
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false, length = 255)
     private String name;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Builder
-    private InventionComponent(Case caseEntity, String label, String name, String description) {
+    private InventionComponent(Case caseEntity, String name, String description, Integer displayOrder) {
         this.caseEntity = caseEntity;
-        this.label = label;
         this.name = name;
         this.description = description;
+        this.displayOrder = displayOrder;
     }
 
     public void update(String name, String description) {

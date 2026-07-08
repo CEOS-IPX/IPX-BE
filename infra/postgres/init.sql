@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS users (
     company         VARCHAR(200),
     provider        VARCHAR(20)     NOT NULL DEFAULT 'LOCAL',
     provider_id     VARCHAR(255),
-    active          BOOLEAN         NOT NULL DEFAULT TRUE,
+    is_active          BOOLEAN         NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
 

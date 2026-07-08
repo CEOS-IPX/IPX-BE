@@ -69,6 +69,7 @@ services:
       retries: 5
       start_period: 90s   # BGE-M3 모델 로드 시간 고려
     volumes:
+      - python_data:/data
       - huggingface_cache:/app/.cache/huggingface
     networks:
       - patent-net
@@ -176,6 +177,7 @@ services:
     logging: *default-logging
 
 volumes:
+  python_data:
   huggingface_cache:
   postgres_data:
   redis_data:

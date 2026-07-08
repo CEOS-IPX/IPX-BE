@@ -64,54 +64,60 @@ CREATE TABLE IF NOT EXISTS users (
     provider_id     VARCHAR(255),
     is_active       BOOLEAN         NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMP       NOT NULL DEFAULT NOW()
+    updated_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
+
+    UNIQUE(provider, provider_id)
 );
 
 -- 2. terms_agreements
 CREATE TABLE IF NOT EXISTS terms_agreements (
     id              BIGSERIAL       PRIMARY KEY,
     user_id         BIGINT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    terms_type      VARCHAR(50)     NOT NULL,
+    type            VARCHAR(50)     NOT NULL,
+    agreed          BOOLEAN         NOT NULL,
     terms_version   VARCHAR(20)     NOT NULL,
-    created_at      TIMESTAMP       NOT NULL DEFAULT NOW()
+    created_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
+
+    UNIQUE(user_id, type, terms_version)
 );
-CREATE INDEX IF NOT EXISTS idx_ta_user ON terms_agreements (user_id);
 
 -- 3. cases
 CREATE TABLE IF NOT EXISTS cases (
-     id                      BIGSERIAL       PRIMARY KEY,
-     user_id                 BIGINT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id                      BIGSERIAL       PRIMARY KEY,
+    user_id                 BIGINT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title                   VARCHAR(500)    NOT NULL,
     applicant_name          VARCHAR(200),
     inventor_name           VARCHAR(200),
     technical_field         TEXT,
     description             TEXT,
     user_input_ipc          TEXT[]          NOT NULL DEFAULT '{}',
+    keywords                TEXT[]          NOT NULL DEFAULT '{}',
     search_completed_at     TIMESTAMP,
     novelty_completed_at    TIMESTAMP,
     inventive_completed_at  TIMESTAMP,
     report_completed_at     TIMESTAMP,
     created_at              TIMESTAMP       NOT NULL DEFAULT NOW(),
     updated_at              TIMESTAMP       NOT NULL DEFAULT NOW()
-    );
+);
 CREATE INDEX IF NOT EXISTS idx_cases_user ON cases (user_id, created_at DESC);
 
 -- 4. invention_components
 CREATE TABLE IF NOT EXISTS invention_components (
-    id              BIGSERIAL       PRIMARY KEY,
-    case_id         BIGINT          NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
-    label           VARCHAR(1)         NOT NULL,
-    name            VARCHAR(200)    NOT NULL,
-    description     TEXT            NOT NULL,
-    created_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
-    UNIQUE(case_id, label)
-    );
-CREATE INDEX IF NOT EXISTS idx_ic_case ON invention_components (case_id);
+      id              BIGSERIAL       PRIMARY KEY,
+      case_id         BIGINT          NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+      name            VARCHAR(255)    NOT NULL,
+      description     TEXT            NOT NULL,
+      display_order   SMALLINT        NOT NULL,
+      created_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
+
+      UNIQUE(case_id, display_order)
+);
 
 -- 5. prior_arts
 CREATE TABLE IF NOT EXISTS prior_arts (
-      id                  BIGSERIAL       PRIMARY KEY,
-      case_id             BIGINT          NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+    id                  BIGSERIAL       PRIMARY KEY,
+    case_id             BIGINT          NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
     application_number  VARCHAR(20)     NOT NULL,
     source              VARCHAR(20)     NOT NULL,
     rrf_score           FLOAT           NOT NULL,
@@ -122,58 +128,61 @@ CREATE TABLE IF NOT EXISTS prior_arts (
     key_features        TEXT[],
     matched_keywords    TEXT[]          NOT NULL DEFAULT '{}',
     created_at          TIMESTAMP       NOT NULL DEFAULT NOW(),
+
     UNIQUE(case_id, application_number)
-    );
-CREATE INDEX IF NOT EXISTS idx_pa_case_rank ON prior_arts (case_id, rank);
+);
+CREATE INDEX idx_pa_case_rrf ON prior_arts (case_id, rrf_score DESC);
 
 -- 6. novelty_analyses
 CREATE TABLE IF NOT EXISTS novelty_analyses (
-    id              BIGSERIAL       PRIMARY KEY,
-    case_id         BIGINT          NOT NULL UNIQUE REFERENCES cases(id) ON DELETE CASCADE,
-    overall_verdict VARCHAR(20),
-    summary         TEXT,
-    created_at      TIMESTAMP       NOT NULL DEFAULT NOW()
-    );
+    id                  BIGSERIAL       PRIMARY KEY,
+    case_id             BIGINT          NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+    d1_prior_art_id     BIGINT          NOT NULL REFERENCES prior_arts(id) ON DELETE CASCADE,
+    overall_similarity  VARCHAR(20)     NOT NULL,
+    conclusion_text     TEXT            NOT NULL,
+    created_at          TIMESTAMP       NOT NULL DEFAULT NOW(),
+
+    UNIQUE(case_id)
+);
 
 -- 7. novelty_comparisons
 CREATE TABLE IF NOT EXISTS novelty_comparisons (
-   id                      BIGSERIAL       PRIMARY KEY,
-   novelty_analysis_id     BIGINT          NOT NULL REFERENCES novelty_analyses(id) ON DELETE CASCADE,
-    component_id            BIGINT          NOT NULL REFERENCES invention_components(id) ON DELETE CASCADE,
-    prior_art_id            BIGINT          NOT NULL REFERENCES prior_arts(id) ON DELETE CASCADE,
-    match_status            VARCHAR(20)     NOT NULL,
-    prior_art_excerpt       TEXT,
-    UNIQUE(novelty_analysis_id, component_id, prior_art_id)
+    id                  BIGSERIAL       PRIMARY KEY,
+    analysis_id         BIGINT          NOT NULL REFERENCES novelty_analyses(id) ON DELETE CASCADE,
+    component_id        BIGINT          NOT NULL REFERENCES invention_components(id) ON DELETE CASCADE,
+    disclosure_text     TEXT            NOT NULL,
+    comparison_result   VARCHAR(10)     NOT NULL,
+
+    UNIQUE(analysis_id, component_id)
 );
-CREATE INDEX IF NOT EXISTS idx_nc_analysis ON novelty_comparisons (novelty_analysis_id);
 
 -- 8. inventive_step_analyses
 CREATE TABLE IF NOT EXISTS inventive_step_analyses (
-   id                  BIGSERIAL       PRIMARY KEY,
-   case_id             BIGINT          NOT NULL UNIQUE REFERENCES cases(id) ON DELETE CASCADE,
-    primary_art_id      BIGINT          NOT NULL REFERENCES prior_arts(id),
-    secondary_art_id    BIGINT          REFERENCES prior_arts(id),
+    id                  BIGSERIAL       PRIMARY KEY,
+    case_id             BIGINT          NOT NULL UNIQUE REFERENCES cases(id) ON DELETE CASCADE,
+    primary_art_id      BIGINT          NOT NULL REFERENCES prior_arts(id) ON DELETE CASCADE,
+    secondary_art_id    BIGINT          REFERENCES prior_arts(id) ON DELETE CASCADE,
     created_at          TIMESTAMP       NOT NULL DEFAULT NOW()
 );
 
 -- 9. inventive_arguments
 CREATE TABLE IF NOT EXISTS inventive_arguments (
-       id              BIGSERIAL       PRIMARY KEY,
-       analysis_id     BIGINT          NOT NULL REFERENCES inventive_step_analyses(id) ON DELETE CASCADE,
+    id              BIGSERIAL       PRIMARY KEY,
+    analysis_id     BIGINT          NOT NULL REFERENCES inventive_step_analyses(id) ON DELETE CASCADE,
     argument_type   VARCHAR(30)     NOT NULL,
     applicable      BOOLEAN         NOT NULL DEFAULT FALSE,
     ai_recommended  BOOLEAN         NOT NULL DEFAULT FALSE,
     content         JSONB,
     created_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
+
     UNIQUE(analysis_id, argument_type)
 );
-CREATE INDEX IF NOT EXISTS idx_ia_analysis ON inventive_arguments (analysis_id);
 
 -- 10. reports
 CREATE TABLE IF NOT EXISTS reports (
-       id                       BIGSERIAL       PRIMARY KEY,
-       case_id                  BIGINT          NOT NULL UNIQUE REFERENCES cases(id) ON DELETE CASCADE,
+    id                       BIGSERIAL       PRIMARY KEY,
+    case_id                  BIGINT          NOT NULL UNIQUE REFERENCES cases(id) ON DELETE CASCADE,
     author_name              VARCHAR(100)    NOT NULL,
     novelty_satisfied        BOOLEAN         NOT NULL,
     inventive_satisfied      BOOLEAN         NOT NULL,

@@ -151,6 +151,7 @@ CREATE TABLE IF NOT EXISTS novelty_comparisons (
     analysis_id         BIGINT          NOT NULL REFERENCES novelty_analyses(id) ON DELETE CASCADE,
     component_id        BIGINT          NOT NULL REFERENCES invention_components(id) ON DELETE CASCADE,
     disclosure_text     TEXT            NOT NULL,
+    citation            TEXT            NOT NULL,
     comparison_result   VARCHAR(20)     NOT NULL,
 
     UNIQUE(analysis_id, component_id)
@@ -171,7 +172,6 @@ CREATE TABLE IF NOT EXISTS inventive_arguments (
     analysis_id     BIGINT          NOT NULL REFERENCES inventive_step_analyses(id) ON DELETE CASCADE,
     argument_type   VARCHAR(30)     NOT NULL,
     applicable      BOOLEAN         NOT NULL DEFAULT FALSE,
-    ai_recommended  BOOLEAN         NOT NULL DEFAULT FALSE,
     content         JSONB,
     created_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP       NOT NULL DEFAULT NOW(),

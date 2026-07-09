@@ -38,14 +38,19 @@ public class NoveltyComparison {
     @Column(name = "disclosure_text", columnDefinition = "TEXT", nullable = false)
     private String disclosureText;
 
+    @Column(name = "citation", columnDefinition = "TEXT", nullable = false)
+    private String citation;
+
     @Builder
     private NoveltyComparison(NoveltyAnalysis noveltyAnalysis,
                               InventionComponent component,
                               ComparisonResult comparisonResult,
-                              String disclosureText) {
+                              String disclosureText,
+                              String citation) {
         this.noveltyAnalysis = noveltyAnalysis;
         this.component = component;
         this.comparisonResult = comparisonResult;
         this.disclosureText = disclosureText;
+        this.citation = citation;
     }
 }

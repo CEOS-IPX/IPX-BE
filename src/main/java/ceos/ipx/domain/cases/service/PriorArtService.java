@@ -1,54 +1,102 @@
 package ceos.ipx.domain.cases.service;
 
+import ceos.ipx.domain.cases.dto.request.AddManualRequest;
 import ceos.ipx.domain.cases.dto.response.PriorArtResponse;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.PriorArt;
-import ceos.ipx.domain.cases.repository.CaseRepository;
-import ceos.ipx.domain.cases.repository.PriorArtRepository;
-import ceos.ipx.domain.user.entity.User;
-import ceos.ipx.domain.user.repository.UserRepository;
-import ceos.ipx.global.exception.BusinessException;
-import ceos.ipx.global.exception.ErrorCode;
+import ceos.ipx.global.python.PythonSearchClient;
+import ceos.ipx.global.python.dto.request.PythonAddManualRequest;
+import ceos.ipx.global.python.dto.response.PythonAddManualResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 /**
- * 선행기술 조회
+ * 선행기술 조회/관리 서비스
  *
  * 담당:
  *   - GET  /api/cases/{caseId}/prior-arts        : 선행기술 조회
- *   - POST /api/cases/{caseId}/prior-arts/manual : 수동 추가 (Step 3 후반)
+ *   - POST /api/cases/{caseId}/prior-arts/manual : 수동 추가
+ *
+ * Python 호출을 트랜잭션 밖에서 실행하기 위해 트랜잭션 로직은
+ * PriorArtTxService에 위임 (프록시 경유)
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PriorArtService {
 
-    private final UserRepository userRepository;
-    private final CaseRepository caseRepository;
-    private final PriorArtRepository priorArtRepository;
+    private final PriorArtTxService txService;
+    private final PythonSearchClient pythonSearchClient;
     private final RelevanceCalculator relevanceCalculator;
 
     /**
-     * 사건의 모든 선행기술 조회 (관련도 순)
+     * 사건의 모든 선행기술 조회 (rrf_score DESC + created_at ASC)
+     * relevance는 전체 개수 기준으로 계산
      */
-    @Transactional(readOnly = true)
     public List<PriorArtResponse> getPriorArts(Long userId, Long caseId) {
-        // 1. User + Case 조회 (권한 검증)
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        Case caseEntity = txService.findCaseWithAuth(userId, caseId);
+        List<PriorArt> priorArts = txService.findAllPriorArts(caseEntity);
+        return buildResponses(priorArts);
+    }
 
-        Case caseEntity = caseRepository.findByIdAndUser(caseId, user)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
+    /**
+     * 사용자가 지정한 출원번호들을 prior_arts에 수동 추가
+     *
+     * 흐름:
+     *   1. Case 조회 (권한 검증)
+     *   2. 중복 필터링 (기존 prior_arts와 겹치는 것 제외)
+     *   3. Python /search/add-manual 호출 (LLM 요약 등)
+     *   4. 응답 받은 새 특허를 prior_arts INSERT
+     *   5. 전체 목록 재조회 + relevance 계산 후 반환
+     */
+    public List<PriorArtResponse> addManual(Long userId, Long caseId, AddManualRequest request) {
+        // 1. Case 조회 (권한 검증)
+        Case caseEntity = txService.findCaseWithAuth(userId, caseId);
 
-        // 2. PriorArt 전체 조회
-        List<PriorArt> priorArts = priorArtRepository.findByCaseEntityOrderByRrfScoreDescCreatedAtAsc(caseEntity);
+        // 2. 중복 필터링
+        Set<String> duplicates = txService.findDuplicateApplicationNumbers(
+                caseEntity, request.applicationNumbers());
+        List<String> newApplicationNumbers = request.applicationNumbers().stream()
+                .filter(num -> !duplicates.contains(num))
+                .toList();
 
-        // 3. relevance 계산 후 응답
+        if (!duplicates.isEmpty()) {
+            log.info("[AddManual] 중복 특허 제외: caseId={}, duplicates={}", caseId, duplicates);
+        }
+
+        // 3. 신규 특허가 있으면 Python 호출
+        if (!newApplicationNumbers.isEmpty()) {
+            PythonAddManualRequest pyRequest = new PythonAddManualRequest(
+                    newApplicationNumbers,
+                    new PythonAddManualRequest.SearchContext(
+                            caseEntity.getTitle(),
+                            caseEntity.getDescription(),
+                            caseEntity.getKeywords()
+                    )
+            );
+
+            // Python 호출
+            PythonAddManualResponse response = pythonSearchClient.addManual(pyRequest);
+
+            // 4. 저장 (트랜잭션 프록시 경유)
+            txService.saveManualPriorArts(caseId, response);
+        } else {
+            log.info("[AddManual] 신규 특허 없음 (모두 중복): caseId={}", caseId);
+        }
+
+        // 5. 전체 목록 재조회 + relevance 계산
+        List<PriorArt> allPriorArts = txService.findAllPriorArts(caseEntity);
+        return buildResponses(allPriorArts);
+    }
+
+    /**
+     * PriorArt 리스트를 응답 DTO로 변환하면서 relevance 계산.
+     */
+    private List<PriorArtResponse> buildResponses(List<PriorArt> priorArts) {
         int total = priorArts.size();
         return priorArts.stream()
                 .map(pa -> {

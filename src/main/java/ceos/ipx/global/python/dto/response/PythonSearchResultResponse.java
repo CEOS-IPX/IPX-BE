@@ -55,10 +55,8 @@ public record PythonSearchResultResponse(
     ) {}
 
     /**
-     * 개별 특허 결과.
-     * Spring 측 prior_arts 테이블에 저장할 정보.
-     *
-     * relevance는 String 타입 (한글 카테고리 or 랭킹 문자열).
+     * 개별 특허 결과
+     * Spring 측 prior_arts 테이블에 저장할 정보
      */
     public record PatentResult(
             @JsonProperty("application_number")
@@ -91,14 +89,14 @@ public record PythonSearchResultResponse(
             Double rrfScore,
 
             /**
-             * 데이터 소스: ["opensearch", "pgvector", "manual"] 중 하나 이상.
-             * Spring에서 이 리스트를 보고 PriorArtSource enum(SEARCH/MANUAL) 결정.
+             * 데이터 소스: ["opensearch", "pgvector", "manual"] 중 하나 이상
+             * Spring에서 이 리스트를 보고 PriorArtSource enum(SEARCH/MANUAL) 결정
              */
             List<String> sources
     ) {}
 
     /**
-     * 디버그 정보 (Python SearchDebugInfo와 필드 일치).
+     * 디버그 정보 (Python SearchDebugInfo와 필드 일치)
      */
     public record Debug(
             @JsonProperty("expanded_keywords")

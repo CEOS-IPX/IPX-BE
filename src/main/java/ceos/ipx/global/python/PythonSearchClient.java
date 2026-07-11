@@ -2,7 +2,9 @@ package ceos.ipx.global.python;
 
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
+import ceos.ipx.global.python.dto.request.PythonAddManualRequest;
 import ceos.ipx.global.python.dto.request.PythonSearchRequest;
+import ceos.ipx.global.python.dto.response.PythonAddManualResponse;
 import ceos.ipx.global.python.dto.response.PythonCancelResponse;
 import ceos.ipx.global.python.dto.response.PythonSearchResultResponse;
 import ceos.ipx.global.python.dto.response.PythonSearchStatusResponse;
@@ -23,6 +25,7 @@ import java.time.Duration;
  *   - POST /search              : 검색 실행 (동기 블로킹, @Async 스레드에서 호출)
  *   - GET  /search/{id}/status  : 진행 상태 조회
  *   - POST /search/{id}/cancel  : 검색 중단
+ *   - POST /search/add-manual   : 수동 특허 추가
  */
 @Slf4j
 @Component
@@ -31,11 +34,10 @@ public class PythonSearchClient {
 
     private final WebClient pythonWebClient;
 
-    /**
-     * 검색 실행
-     * Python이 완료된 결과를 반환할 때까지 블로킹
-     * 호출자는 반드시 @Async 스레드에서 실행할 것
-     */
+    // ============================================================
+    // 검색 실행
+    // ============================================================
+
     public PythonSearchResultResponse executeSearch(PythonSearchRequest request) {
         log.info("[Python] 검색 요청 시작: searchId={}, title={}",
                 request.searchId(), request.title());
@@ -64,9 +66,10 @@ public class PythonSearchClient {
         }
     }
 
-    /**
-     * 검색 진행 상태 조회 (폴링용)
-     */
+    // ============================================================
+    // 진행 상태 조회
+    // ============================================================
+
     public PythonSearchStatusResponse getStatus(String searchId) {
         try {
             return pythonWebClient.get()
@@ -82,10 +85,10 @@ public class PythonSearchClient {
         }
     }
 
-    /**
-     * 검색 중단 요청
-     * @return 취소 결과 (이미 완료 상태였으면 cancelled=false)
-     */
+    // ============================================================
+    // 검색 중단
+    // ============================================================
+
     public PythonCancelResponse cancel(String searchId) {
         try {
             PythonCancelResponse response = pythonWebClient.post()
@@ -101,6 +104,41 @@ public class PythonSearchClient {
 
         } catch (WebClientResponseException e) {
             log.warn("[Python] 검색 중단 실패: searchId={}, status={}", searchId, e.getStatusCode());
+            throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
+        }
+    }
+
+    // ============================================================
+    // 수동 특허 추가
+    // ============================================================
+
+    /**
+     * Python /search/add-manual 호출
+     *   - 자동 적재 확인 + LLM 요약 포함 → 최대 60초 소요 가능
+     *   - 응답은 새로 추가된 특허 정보만 포함 (Spring이 저장/병합 관리)
+     */
+    public PythonAddManualResponse addManual(PythonAddManualRequest request) {
+        log.info("[Python] 수동 추가 요청 시작: count={}", request.applicationNumbers().size());
+
+        try {
+            PythonAddManualResponse response = pythonWebClient.post()
+                    .uri("/search/add-manual")
+                    .bodyValue(request)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, this::handleError)
+                    .bodyToMono(PythonAddManualResponse.class)
+                    .block(Duration.ofSeconds(90));
+
+            log.info("[Python] 수동 추가 완료: newResults={}",
+                    response != null && response.results() != null ? response.results().size() : 0);
+            return response;
+
+        } catch (WebClientResponseException e) {
+            log.error("[Python] 수동 추가 실패: status={}, body={}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
+            throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
+        } catch (Exception e) {
+            log.error("[Python] 수동 추가 예외", e);
             throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
         }
     }

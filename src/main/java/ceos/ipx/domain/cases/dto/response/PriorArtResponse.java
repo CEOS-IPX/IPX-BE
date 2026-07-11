@@ -56,10 +56,7 @@ public record PriorArtResponse(
         Double rrfScore,
 
         @Schema(description = "관련도 등급", example = "매우 높음", allowableValues = {"매우 높음", "높음", "보통", "낮음"})
-        String relevance,
-
-        @Schema(description = "데이터 소스", example = "SEARCH", allowableValues = {"SEARCH", "MANUAL"})
-        PriorArtSource source
+        String relevance
 ) {
 
     public static PriorArtResponse of(PriorArt priorArt, String relevance) {
@@ -78,8 +75,7 @@ public record PriorArtResponse(
                 priorArt.getMatchedKeywords(),
                 priorArt.getReason(),
                 priorArt.getRrfScore(),
-                relevance,
-                priorArt.getSource()
+                relevance
         );
     }
 }

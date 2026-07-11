@@ -25,7 +25,7 @@ public class NoveltyComparison {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "analysis_id", nullable = false)
-    private NoveltyAnalysis noveltyAnalysis;
+    private NoveltyAnalysis analysis;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "component_id", nullable = false)
@@ -38,7 +38,7 @@ public class NoveltyComparison {
     @Column(name = "disclosure_text", columnDefinition = "TEXT", nullable = false)
     private String disclosureText;
 
-    @Column(name = "citation", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "citation", columnDefinition = "TEXT")
     private String citation;
 
     @Builder
@@ -47,7 +47,7 @@ public class NoveltyComparison {
                               ComparisonResult comparisonResult,
                               String disclosureText,
                               String citation) {
-        this.noveltyAnalysis = noveltyAnalysis;
+        this.analysis = noveltyAnalysis;
         this.component = component;
         this.comparisonResult = comparisonResult;
         this.disclosureText = disclosureText;

@@ -119,9 +119,17 @@ CREATE TABLE IF NOT EXISTS prior_arts (
     id                  BIGSERIAL       PRIMARY KEY,
     case_id             BIGINT          NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
     application_number  VARCHAR(20)     NOT NULL,
-    source              VARCHAR(20)     NOT NULL,
+    title               VARCHAR(500),
+    applicant_name      VARCHAR(200),
+    application_date    DATE,
+    registration_date   DATE,
+    legal_status        VARCHAR(20),
+    ipc_codes           TEXT[]          NOT NULL DEFAULT '{}',
+
+    source              VARCHAR(20)     NOT NULL,   -- 'SEARCH', 'MANUAL'
     rrf_score           FLOAT           NOT NULL,
     included            BOOLEAN         NOT NULL DEFAULT TRUE,
+
     reason              TEXT,
     summary             TEXT,
     tech_purpose        TEXT,
@@ -151,7 +159,7 @@ CREATE TABLE IF NOT EXISTS novelty_comparisons (
     analysis_id         BIGINT          NOT NULL REFERENCES novelty_analyses(id) ON DELETE CASCADE,
     component_id        BIGINT          NOT NULL REFERENCES invention_components(id) ON DELETE CASCADE,
     disclosure_text     TEXT            NOT NULL,
-    citation            TEXT            NOT NULL,
+    citation            TEXT,
     comparison_result   VARCHAR(20)     NOT NULL,
 
     UNIQUE(analysis_id, component_id)

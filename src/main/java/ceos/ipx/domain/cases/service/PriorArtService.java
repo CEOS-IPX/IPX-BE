@@ -46,7 +46,7 @@ public class PriorArtService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
 
         // 2. PriorArt 전체 조회
-        List<PriorArt> priorArts = priorArtRepository.findByCaseEntityOrderByRrfScoreDesc(caseEntity);
+        List<PriorArt> priorArts = priorArtRepository.findByCaseEntityOrderByRrfScoreDescCreatedAtAsc(caseEntity);
 
         // 3. relevance 계산 후 응답
         int total = priorArts.size();

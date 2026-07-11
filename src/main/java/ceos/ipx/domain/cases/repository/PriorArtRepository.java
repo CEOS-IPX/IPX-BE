@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public interface PriorArtRepository extends JpaRepository<PriorArt, Long> {
 
-    List<PriorArt> findByCaseEntityOrderByRrfScoreDesc(Case caseEntity);
+    List<PriorArt> findByCaseEntityOrderByRrfScoreDescCreatedAtAsc(Case caseEntity);
 
     Optional<PriorArt> findByCaseEntityAndApplicationNumber(Case caseEntity, String applicationNumber);
 

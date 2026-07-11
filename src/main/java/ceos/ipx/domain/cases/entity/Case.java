@@ -79,6 +79,10 @@ public class Case extends BaseEntity {
         this.keywords = keywords != null ? keywords : new ArrayList<>();
     }
 
+    public void updateKeywords(List<String> keywords) {
+        this.keywords = keywords != null ? keywords : new ArrayList<>();
+    }
+
     // ===== 단계 완료 처리 =====
     public void completeSearch() {
         this.searchCompletedAt = LocalDateTime.now();

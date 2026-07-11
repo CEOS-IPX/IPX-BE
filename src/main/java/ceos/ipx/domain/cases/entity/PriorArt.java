@@ -65,10 +65,6 @@ public class PriorArt {
     @Column(name = "rrf_score", nullable = false)
     private Double rrfScore;
 
-    /** 변리사가 분석 대상에서 제외하면 false */
-    @Column(nullable = false)
-    private Boolean included = true;
-
     @Column(columnDefinition = "TEXT")
     private String reason;
 
@@ -109,20 +105,11 @@ public class PriorArt {
         this.ipcCodes = ipcCodes != null ? ipcCodes : new ArrayList<>();
         this.source = source;
         this.rrfScore = rrfScore;
-        this.included = true;
         this.summary = summary;
         this.techPurpose = techPurpose;
         this.keyFeatures = keyFeatures != null ? keyFeatures : new ArrayList<>();
         this.matchedKeywords = matchedKeywords != null ? matchedKeywords : new ArrayList<>();
         this.reason = reason;
-    }
-
-    public void exclude() {
-        this.included = false;
-    }
-
-    public void include() {
-        this.included = true;
     }
 }
 

@@ -128,7 +128,6 @@ CREATE TABLE IF NOT EXISTS prior_arts (
 
     source              VARCHAR(20)     NOT NULL,   -- 'SEARCH', 'MANUAL'
     rrf_score           FLOAT           NOT NULL,
-    included            BOOLEAN         NOT NULL DEFAULT TRUE,
 
     reason              TEXT,
     summary             TEXT,

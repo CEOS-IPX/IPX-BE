@@ -20,8 +20,8 @@ import java.util.List;
  *   - result_count (선택, 기본 10, 1-30): 결과 개수
  *   - required_application_numbers (선택): 반드시 포함할 출원번호
  *
- * @JsonInclude(NON_NULL)로 null 필드는 JSON에서 제외 → Python 측 Optional 필드에
- * default 값이 정상 적용되도록 함.
+ * @JsonInclude(NON_NULL)로 null 필드는 JSON에서 제외
+ * → Python 측 Optional 필드에 default 값이 정상 적용되도록 함
  */
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)

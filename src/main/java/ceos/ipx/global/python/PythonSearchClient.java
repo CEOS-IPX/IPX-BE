@@ -17,9 +17,9 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 
 /**
- * Python 검색/분석 서버 통신 클라이언트.
+ * Python 검색/분석 서버 통신 클라이언트
  *
- * 지원 엔드포인트:
+ * 엔드포인트:
  *   - POST /search              : 검색 실행 (동기 블로킹, @Async 스레드에서 호출)
  *   - GET  /search/{id}/status  : 진행 상태 조회
  *   - POST /search/{id}/cancel  : 검색 중단
@@ -65,7 +65,7 @@ public class PythonSearchClient {
     }
 
     /**
-     * 검색 진행 상태 조회 (폴링용).
+     * 검색 진행 상태 조회 (폴링용)
      */
     public PythonSearchStatusResponse getStatus(String searchId) {
         try {
@@ -83,7 +83,7 @@ public class PythonSearchClient {
     }
 
     /**
-     * 검색 중단 요청.
+     * 검색 중단 요청
      * @return 취소 결과 (이미 완료 상태였으면 cancelled=false)
      */
     public PythonCancelResponse cancel(String searchId) {
@@ -104,10 +104,6 @@ public class PythonSearchClient {
             throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
         }
     }
-
-    // ============================================================
-    // Helper
-    // ============================================================
 
     private Mono<? extends Throwable> handleError(
             org.springframework.web.reactive.function.client.ClientResponse response) {

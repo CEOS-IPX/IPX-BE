@@ -7,6 +7,7 @@ import ceos.ipx.domain.analysis.novelty.repository.NoveltyComparisonRepository;
 import ceos.ipx.domain.cases.dto.request.SearchRequest;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.InventionComponent;
+import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.domain.cases.repository.CaseRepository;
 import ceos.ipx.domain.cases.repository.InventionComponentRepository;
 import ceos.ipx.domain.cases.repository.PriorArtRepository;
@@ -15,6 +16,7 @@ import ceos.ipx.domain.user.entity.User;
 import ceos.ipx.domain.user.repository.UserRepository;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
+import ceos.ipx.global.python.dto.response.PythonSearchResultResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * 검색 관련 트랜잭션 처리 Service (self-invocation 문제 해결)
+ *
+ * 트랜잭션 메서드:
+ *   1. prepareCaseAndComponents: 검색 시작 시 (동기 요청 스레드)
+ *   2. saveSearchResults:        Python 응답 후 (비동기 스레드)
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -31,6 +40,7 @@ public class CaseSearchTxService {
     private final CaseRepository caseRepository;
     private final InventionComponentRepository componentRepository;
     private final PriorArtRepository priorArtRepository;
+    private final PriorArtMapper priorArtMapper;
 
     // 재검색 시 삭제해야 할 도메인을 위한 레포지토리
     private final NoveltyAnalysisRepository noveltyAnalysisRepository;
@@ -43,14 +53,14 @@ public class CaseSearchTxService {
      * Case를 생성하거나 재사용하고, 구성요소를 저장
      *
      * 재검색 케이스:
-     *   - Case.resetAllStages() 호출
-     *   - 기존 구성요소, 선행기술, 분석 결과, 리포트 모두 삭제
+     *   - Case.resetAllStages()
+     *   - 기존 하위 데이터 전체 삭제 (구성요소, 선행기술, 신규성/진보성 분석, 리포트)
      */
     @Transactional
     public Case prepareCaseAndComponents(Long userId, SearchRequest request) {
         // 1. User 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR));
 
         Case caseEntity;
 
@@ -94,24 +104,24 @@ public class CaseSearchTxService {
     }
 
     /**
-     * 재검색 시 Case의 모든 하위 데이터 삭제
-     * 삭제 순서: FK 참조 관계상 자식 -> 부모
+     * 재검색 시 사건의 모든 하위 데이터 삭제
+     * 삭제 순서 주의: FK 참조 관계상 자식 -> 부모
      */
     private void resetCaseData(Case caseEntity) {
         Long caseId = caseEntity.getId();
 
-        // 완료 시각 초기화
+        // 완료 시각 및 keywords 초기화
         caseEntity.resetAllStages();
         caseEntity.updateKeywords(List.of());
 
-        // 리포트 삭제 (독립 테이블)
+        // 리포트 삭제
         reportRepository.deleteAllByCaseId(caseId);
 
-        // 진보성 분석 삭제 (arguments가 analysis를 참조하므로 arguments부터)
+        // 진보성 분석 삭제 (arguments → analysis 순)
         inventiveArgumentRepository.deleteAllByCaseId(caseId);
         inventiveStepAnalysisRepository.deleteAllByCaseId(caseId);
 
-        // 신규성 분석 삭제 (comparisons가 analyses를 참조)
+        // 신규성 분석 삭제 (comparisons → analyses 순)
         noveltyComparisonRepository.deleteAllByCaseId(caseId);
         noveltyAnalysisRepository.deleteAllByCaseId(caseId);
 
@@ -120,5 +130,35 @@ public class CaseSearchTxService {
 
         // 구성요소 삭제
         componentRepository.deleteAllByCaseId(caseId);
+    }
+
+    /**
+     * Python 검색 응답을 DB에 저장
+     *
+     *   1. Case.keywords 갱신 (intent.keywords)
+     *   2. PriorArt INSERT
+     *   3. Case.completeSearch() 호출
+     */
+    @Transactional
+    public void saveSearchResults(Long caseId, PythonSearchResultResponse response) {
+        Case caseEntity = caseRepository.findById(caseId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
+
+        // 1. Case.keywords 갱신 (intent.keywords 저장)
+        if (response.intent() != null && response.intent().keywords() != null) {
+            caseEntity.updateKeywords(response.intent().keywords());
+        }
+
+        // 2. PriorArt INSERT
+        List<PythonSearchResultResponse.PatentResult> results = response.results();
+        if (results != null && !results.isEmpty()) {
+            for (PythonSearchResultResponse.PatentResult r : results) {
+                PriorArt priorArt = priorArtMapper.toEntity(caseEntity, r);
+                priorArtRepository.save(priorArt);
+            }
+        }
+
+        // 3. 검색 완료 시각 갱신
+        caseEntity.completeSearch();
     }
 }

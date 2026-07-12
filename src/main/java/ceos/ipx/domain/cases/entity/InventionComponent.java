@@ -37,14 +37,14 @@ public class InventionComponent {
     private String description;
 
     @Column(name = "display_order", nullable = false)
-    private Integer displayOrder;
+    private Short displayOrder;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Builder
-    private InventionComponent(Case caseEntity, String name, String description, Integer displayOrder) {
+    private InventionComponent(Case caseEntity, String name, String description, Short displayOrder) {
         this.caseEntity = caseEntity;
         this.name = name;
         this.description = description;

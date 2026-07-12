@@ -35,7 +35,26 @@ public enum ErrorCode {
     SOCIAL_LOGIN_NOT_ALLOWED(HttpStatus.CONFLICT, "AU022", "일반 로그인으로 가입된 이메일입니다."),
     OAUTH_SIGNUP_TOKEN_EXPIRED(HttpStatus.GONE, "AU023", "OAuth 회원가입 토큰이 만료되었거나 존재하지 않습니다."),
 
-    UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED, "SC001", "인증이 필요합니다."),    ACCESS_DENIED(HttpStatus.FORBIDDEN, "SC002", "해당 요청에 권한이 없습니다.");
+    UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED, "SC001", "인증이 필요합니다."),
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "SC002", "해당 요청에 권한이 없습니다."),
+
+    // ===== Python 서버 통신 =====
+    PYTHON_SERVER_ERROR(HttpStatus.BAD_GATEWAY, "PY001", "AI 서버와 통신 중 오류가 발생했습니다."),
+    PYTHON_SERVER_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "PY002", "AI 서버 응답 시간이 초과되었습니다."),
+
+    // ===== 사건 관련 =====
+    CASE_NOT_FOUND(HttpStatus.NOT_FOUND, "CA001", "사건을 찾을 수 없습니다."),
+
+    // ===== 검색 관련 =====
+    SEARCH_NOT_STARTED(HttpStatus.BAD_REQUEST, "S001", "검색이 시작되지 않았습니다."),
+    SEARCH_NOT_FOUND(HttpStatus.NOT_FOUND, "S002", "검색 정보를 찾을 수 없습니다."),
+    COMPONENTS_REQUIRED(HttpStatus.BAD_REQUEST, "S003", "구성요소가 최소 1개 이상 필요합니다."),
+
+
+    // ===== 선행기술 관련 =====
+    PRIOR_ART_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "해당 선행기술을 찾을 수 없습니다."),
+    ALL_PATENTS_ALREADY_EXIST(HttpStatus.CONFLICT, "P002", "모든 특허가 이미 추가되어 있습니다.");
+
 
     private final HttpStatus status;
     private final String code;

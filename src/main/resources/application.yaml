@@ -20,9 +20,10 @@ management:
     health:
       show-details: never
 
-search-server:
-  base-url: ${SEARCH_SERVER_URL:http://localhost:8000}
-  timeout-seconds: 120
+python:
+  server:
+    base-url: ${SEARCH_SERVER_URL:http://localhost:8000}
+    timeout-seconds: 120
 
 server:
   port: 8080

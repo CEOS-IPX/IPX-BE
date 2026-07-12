@@ -10,22 +10,31 @@ import ceos.ipx.global.python.dto.response.PythonSearchResultResponse;
 import ceos.ipx.global.python.dto.response.PythonSearchStatusResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 
 /**
- * Python 검색/분석 서버 통신 클라이언트
+ * Python 검색/분석 서버 통신 클라이언트.
  *
  * 엔드포인트:
  *   - POST /search              : 검색 실행 (동기 블로킹, @Async 스레드에서 호출)
  *   - GET  /search/{id}/status  : 진행 상태 조회
  *   - POST /search/{id}/cancel  : 검색 중단
  *   - POST /search/add-manual   : 수동 특허 추가
+ *
+ * 예외 처리 원칙:
+ *   - 4xx/5xx: 상태 코드별 매핑 (handleError)
+ *   - 타임아웃/연결 실패: PYTHON_SERVER_TIMEOUT
+ *   - 응답 null: PYTHON_SERVER_ERROR (호출자는 null 걱정 없음)
+ *   - 그 외: PYTHON_SERVER_ERROR
  */
 @Slf4j
 @Component
@@ -42,8 +51,9 @@ public class PythonSearchClient {
         log.info("[Python] 검색 요청 시작: searchId={}, title={}",
                 request.searchId(), request.title());
 
+        PythonSearchResultResponse response;
         try {
-            PythonSearchResultResponse response = pythonWebClient.post()
+            response = pythonWebClient.post()
                     .uri("/search")
                     .bodyValue(request)
                     .retrieve()
@@ -51,19 +61,21 @@ public class PythonSearchClient {
                     .bodyToMono(PythonSearchResultResponse.class)
                     .block(Duration.ofSeconds(120));
 
-            log.info("[Python] 검색 완료: searchId={}, resultCount={}",
-                    request.searchId(),
-                    response != null && response.results() != null ? response.results().size() : 0);
-            return response;
-
-        } catch (WebClientResponseException e) {
-            log.error("[Python] 검색 요청 실패: searchId={}, status={}, body={}",
-                    request.searchId(), e.getStatusCode(), e.getResponseBodyAsString());
-            throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("[Python] 검색 요청 예외: searchId={}", request.searchId(), e);
+            throw mapException(e, "검색 요청 실패: searchId=" + request.searchId());
+        }
+
+        if (response == null) {
+            log.error("[Python] 검색 응답 null: searchId={}", request.searchId());
             throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
         }
+
+        log.info("[Python] 검색 완료: searchId={}, resultCount={}",
+                request.searchId(),
+                response.results() != null ? response.results().size() : 0);
+        return response;
     }
 
     // ============================================================
@@ -71,18 +83,27 @@ public class PythonSearchClient {
     // ============================================================
 
     public PythonSearchStatusResponse getStatus(String searchId) {
+        PythonSearchStatusResponse response;
         try {
-            return pythonWebClient.get()
+            response = pythonWebClient.get()
                     .uri("/search/{searchId}/status", searchId)
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, this::handleError)
                     .bodyToMono(PythonSearchStatusResponse.class)
                     .block(Duration.ofSeconds(10));
 
-        } catch (WebClientResponseException e) {
-            log.warn("[Python] 상태 조회 실패: searchId={}, status={}", searchId, e.getStatusCode());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw mapException(e, "상태 조회 실패: searchId=" + searchId);
+        }
+
+        if (response == null) {
+            log.error("[Python] 상태 응답 null: searchId={}", searchId);
             throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
         }
+
+        return response;
     }
 
     // ============================================================
@@ -90,38 +111,41 @@ public class PythonSearchClient {
     // ============================================================
 
     public PythonCancelResponse cancel(String searchId) {
+        PythonCancelResponse response;
         try {
-            PythonCancelResponse response = pythonWebClient.post()
+            response = pythonWebClient.post()
                     .uri("/search/{searchId}/cancel", searchId)
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, this::handleError)
                     .bodyToMono(PythonCancelResponse.class)
                     .block(Duration.ofSeconds(10));
 
-            log.info("[Python] 검색 중단 요청 완료: searchId={}, cancelled={}",
-                    searchId, response != null ? response.cancelled() : null);
-            return response;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw mapException(e, "검색 중단 실패: searchId=" + searchId);
+        }
 
-        } catch (WebClientResponseException e) {
-            log.warn("[Python] 검색 중단 실패: searchId={}, status={}", searchId, e.getStatusCode());
+        if (response == null) {
+            log.error("[Python] 취소 응답 null: searchId={}", searchId);
             throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
         }
+
+        log.info("[Python] 검색 중단 완료: searchId={}, cancelled={}",
+                searchId, response.cancelled());
+        return response;
     }
 
     // ============================================================
     // 수동 특허 추가
     // ============================================================
 
-    /**
-     * Python /search/add-manual 호출
-     *   - 자동 적재 확인 + LLM 요약 포함 → 최대 60초 소요 가능
-     *   - 응답은 새로 추가된 특허 정보만 포함 (Spring이 저장/병합 관리)
-     */
     public PythonAddManualResponse addManual(PythonAddManualRequest request) {
         log.info("[Python] 수동 추가 요청 시작: count={}", request.applicationNumbers().size());
 
+        PythonAddManualResponse response;
         try {
-            PythonAddManualResponse response = pythonWebClient.post()
+            response = pythonWebClient.post()
                     .uri("/search/add-manual")
                     .bodyValue(request)
                     .retrieve()
@@ -129,28 +153,61 @@ public class PythonSearchClient {
                     .bodyToMono(PythonAddManualResponse.class)
                     .block(Duration.ofSeconds(90));
 
-            log.info("[Python] 수동 추가 완료: newResults={}",
-                    response != null && response.results() != null ? response.results().size() : 0);
-            return response;
-
-        } catch (WebClientResponseException e) {
-            log.error("[Python] 수동 추가 실패: status={}, body={}",
-                    e.getStatusCode(), e.getResponseBodyAsString());
-            throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("[Python] 수동 추가 예외", e);
+            throw mapException(e, "수동 추가 실패");
+        }
+
+        if (response == null) {
+            log.error("[Python] 수동 추가 응답 null");
             throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
         }
+
+        log.info("[Python] 수동 추가 완료: newResults={}",
+                response.results() != null ? response.results().size() : 0);
+        return response;
     }
+
+    // ============================================================
+    // 예외 매핑
+    // ============================================================
 
     private Mono<? extends Throwable> handleError(
             org.springframework.web.reactive.function.client.ClientResponse response) {
+        HttpStatusCode status = response.statusCode();
+
         return response.bodyToMono(String.class)
                 .defaultIfEmpty("(empty)")
                 .flatMap(body -> {
-                    log.error("[Python] 오류 응답: status={}, body={}",
-                            response.statusCode(), body);
+                    log.error("[Python] 오류 응답: status={}, body={}", status, body);
+
+                    if (HttpStatus.NOT_FOUND.equals(status)) {
+                        return Mono.error(new BusinessException(ErrorCode.SEARCH_NOT_FOUND));
+                    }
+
                     return Mono.error(new BusinessException(ErrorCode.PYTHON_SERVER_ERROR));
                 });
+    }
+
+    private BusinessException mapException(Exception e, String context) {
+        if (e instanceof TimeoutException
+                || (e.getCause() != null && e.getCause() instanceof TimeoutException)) {
+            log.error("[Python] 타임아웃: {}", context, e);
+            return new BusinessException(ErrorCode.PYTHON_SERVER_TIMEOUT);
+        }
+
+        if (e instanceof WebClientRequestException) {
+            log.error("[Python] 연결 실패: {}", context, e);
+            return new BusinessException(ErrorCode.PYTHON_SERVER_TIMEOUT);
+        }
+
+        if (e instanceof WebClientResponseException webEx) {
+            log.error("[Python] 오류 응답: {}, status={}", context, webEx.getStatusCode(), e);
+            return new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
+        }
+
+        log.error("[Python] 예외: {}", context, e);
+        return new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
     }
 }

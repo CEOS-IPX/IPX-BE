@@ -60,7 +60,7 @@ public class CaseSearchTxService {
     public Case prepareCaseAndComponents(Long userId, SearchRequest request) {
         // 1. User 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         Case caseEntity;
 

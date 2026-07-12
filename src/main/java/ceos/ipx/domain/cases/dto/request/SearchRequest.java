@@ -60,7 +60,10 @@ public record SearchRequest(
         @Schema(description = "구성요소 배열 (최소 1개). 배열 순서가 곧 표시 순서(A, B, C...)", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotEmpty(message = "구성요소는 최소 1개 이상 필요합니다.")
         @Valid
-        List<ComponentInput> components
+        List<ComponentInput> components,
+
+        @Schema(description = "추가 정보 (선택). 진보성 분석 시 활용", nullable = true)
+        AdditionalInfo additionalInfo
 
 ) {
 
@@ -75,5 +78,37 @@ public record SearchRequest(
                 @Schema(description = "구성요소 설명", example = "차량 센서로부터 실시간 데이터를 수집하는 모듈", requiredMode = Schema.RequiredMode.REQUIRED)
                 @NotBlank(message = "구성요소 설명은 필수입니다.")
                 String description
+        ) {}
+
+        @Schema(description = "추가 정보 (선택). 진보성 분석에서만 활용, 검색에는 미사용")
+        public record AdditionalInfo(
+
+                @Schema(
+                        description = "타 선행기술 대비 차별점 - 사용자가 언급한 선행기술",
+                        example = "삼성전자 임베디드 보안칩 S3SSE2A - PQC를 하드웨어로 통합한 업계 최초 임베디드 보안 솔루션",
+                        nullable = true
+                )
+                String priorArtReference,
+
+                @Schema(
+                        description = "타 선행기술 대비 차별점 - 본 발명과의 차이점",
+                        example = "본 발명은 PQC 연산을 전용 하드웨어 블록이 아닌 기존 범용 MCU의 시큐어 부트로더 영역에서 처리...",
+                        nullable = true
+                )
+                String differentiationNotes,
+
+                @Schema(
+                        description = "관련 데이터 수치 - 측정 조건 및 비교 대상",
+                        example = "대상 하드웨어: ARM Cortex-M33 @ 100MHz, 알고리즘: ML-DSA-65 서명 검증, 측정 도구: DWT 사이클 카운터",
+                        nullable = true
+                )
+                String measurementConditions,
+
+                @Schema(
+                        description = "관련 데이터 수치 - 측정 결과 및 해석",
+                        example = "서명 검증 지연은 baseline 12.1ms에서 32.4ms로 168% 증가, Flash 점유는 21KB에서 78KB로 증가...",
+                        nullable = true
+                )
+                String measurementResults
         ) {}
 }

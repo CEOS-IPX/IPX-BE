@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS terms_agreements (
 CREATE TABLE IF NOT EXISTS cases (
     id                      BIGSERIAL       PRIMARY KEY,
     user_id                 BIGINT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
     title                   VARCHAR(500)    NOT NULL,
     applicant_name          VARCHAR(200),
     inventor_name           VARCHAR(200),
@@ -93,10 +94,17 @@ CREATE TABLE IF NOT EXISTS cases (
     description             TEXT,
     user_input_ipc          TEXT[]          NOT NULL DEFAULT '{}',
     keywords                TEXT[]          NOT NULL DEFAULT '{}',
+
+    prior_art_reference    TEXT,
+    differentiation_notes  TEXT,
+    measurement_conditions TEXT,
+    measurement_results    TEXT,
+
     search_completed_at     TIMESTAMP,
     novelty_completed_at    TIMESTAMP,
     inventive_completed_at  TIMESTAMP,
     report_completed_at     TIMESTAMP,
+
     created_at              TIMESTAMP       NOT NULL DEFAULT NOW(),
     updated_at              TIMESTAMP       NOT NULL DEFAULT NOW()
 );

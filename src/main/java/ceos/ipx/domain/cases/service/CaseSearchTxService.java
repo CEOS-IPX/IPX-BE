@@ -63,6 +63,7 @@ public class CaseSearchTxService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         Case caseEntity;
+        SearchRequest.AdditionalInfo info = request.additionalInfo();
 
         if (request.caseId() == null) {
             // 새 사건 생성
@@ -74,6 +75,10 @@ public class CaseSearchTxService {
                     .technicalField(request.technicalField())
                     .description(request.description())
                     .userInputIpc(request.userInputIpc())
+                    .priorArtReference(info != null ? info.priorArtReference() : null)
+                    .differentiationNotes(info != null ? info.differentiationNotes() : null)
+                    .measurementConditions(info != null ? info.measurementConditions() : null)
+                    .measurementResults(info != null ? info.measurementResults() : null)
                     .build();
             caseEntity = caseRepository.save(caseEntity);
             log.info("[Search] 새 사건 생성: caseId={}", caseEntity.getId());
@@ -83,6 +88,15 @@ public class CaseSearchTxService {
                     .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
 
             resetCaseData(caseEntity);
+
+            // 재검색 시 additionalInfo도 갱신 (사용자가 새로 입력한 값으로)
+            caseEntity.updateAdditionalInfo(
+                    info != null ? info.priorArtReference() : null,
+                    info != null ? info.differentiationNotes() : null,
+                    info != null ? info.measurementConditions() : null,
+                    info != null ? info.measurementResults() : null
+            );
+
             log.info("[Search] 재검색: caseId={} 초기화 완료", caseEntity.getId());
         }
 

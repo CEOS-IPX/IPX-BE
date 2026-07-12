@@ -54,6 +54,18 @@ public class Case extends BaseEntity {
     @Column(columnDefinition = "TEXT[]", nullable = false)
     private List<String> keywords = new ArrayList<>();
 
+    @Column(name = "prior_art_reference", columnDefinition = "TEXT")
+    private String priorArtReference;
+
+    @Column(name = "differentiation_notes", columnDefinition = "TEXT")
+    private String differentiationNotes;
+
+    @Column(name = "measurement_conditions", columnDefinition = "TEXT")
+    private String measurementConditions;
+
+    @Column(name = "measurement_results", columnDefinition = "TEXT")
+    private String measurementResults;
+
     @Column(name = "search_completed_at")
     private LocalDateTime searchCompletedAt;
 
@@ -68,7 +80,10 @@ public class Case extends BaseEntity {
 
     @Builder
     private Case(User user, String title, String applicantName, String inventorName,
-                 String technicalField, String description, List<String> userInputIpc, List<String> keywords) {
+                 String technicalField, String description,
+                 List<String> userInputIpc, List<String> keywords,
+                 String priorArtReference, String differentiationNotes,
+                 String measurementConditions, String measurementResults) {
         this.user = user;
         this.title = title;
         this.applicantName = applicantName;
@@ -77,6 +92,10 @@ public class Case extends BaseEntity {
         this.description = description;
         this.userInputIpc = userInputIpc != null ? userInputIpc : new ArrayList<>();
         this.keywords = keywords != null ? keywords : new ArrayList<>();
+        this.priorArtReference = priorArtReference;
+        this.differentiationNotes = differentiationNotes;
+        this.measurementConditions = measurementConditions;
+        this.measurementResults = measurementResults;
     }
 
     public void updateKeywords(List<String> keywords) {
@@ -106,6 +125,18 @@ public class Case extends BaseEntity {
         this.noveltyCompletedAt = null;
         this.inventiveCompletedAt = null;
         this.reportCompletedAt = null;
+    }
+
+    /**
+     * 재검색 시 additionalInfo 갱신 (사용자가 새로 입력한 정보로 덮어씀)
+     * 파라미터가 null이면 해당 필드도 null로 초기화
+     */
+    public void updateAdditionalInfo(String priorArtReference, String differentiationNotes,
+                                     String measurementConditions, String measurementResults) {
+        this.priorArtReference = priorArtReference;
+        this.differentiationNotes = differentiationNotes;
+        this.measurementConditions = measurementConditions;
+        this.measurementResults = measurementResults;
     }
 
     // ===== 리포트 생성 가능 여부 =====

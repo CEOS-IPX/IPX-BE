@@ -3,8 +3,7 @@ package ceos.ipx.global.opensearch;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
 import ceos.ipx.global.opensearch.dto.PatentDocument;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +20,9 @@ import java.util.Map;
 
 /**
  * OpenSearch 클라이언트 (WebClient 기반)
+ *
+ * 지원 기능:
+ *   - mget: 여러 특허 문서를 출원번호(_id)로 일괄 조회
  */
 @Slf4j
 @Component
@@ -28,7 +30,6 @@ import java.util.Map;
 public class OpenSearchClient {
 
     private final WebClient opensearchWebClient;
-    private final ObjectMapper objectMapper;
 
     @Value("${opensearch.index:patents}")
     private String indexName;
@@ -38,6 +39,8 @@ public class OpenSearchClient {
      *
      * 요청 형식: POST /{index}/_mget  body: {"ids": ["...", "..."]}
      * 응답 형식: {"docs": [{"_id": "...", "found": true, "_source": {...}}, ...]}
+     *
+     * 찾지 못한 문서는 결과에서 제외 (found=false)
      */
     public List<PatentDocument> mgetByApplicationNumbers(List<String> applicationNumbers) {
         if (applicationNumbers == null || applicationNumbers.isEmpty()) {
@@ -49,14 +52,14 @@ public class OpenSearchClient {
 
         log.info("[OpenSearch] mget 요청: index={}, count={}", indexName, applicationNumbers.size());
 
-        JsonNode responseNode;
+        MgetResponse response;
         try {
-            responseNode = opensearchWebClient.post()
+            response = opensearchWebClient.post()
                     .uri("/{index}/_mget", indexName)
                     .bodyValue(requestBody)
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, this::handleError)
-                    .bodyToMono(JsonNode.class)
+                    .bodyToMono(MgetResponse.class)
                     .block(Duration.ofSeconds(30));
 
         } catch (BusinessException e) {
@@ -66,16 +69,16 @@ public class OpenSearchClient {
             throw new BusinessException(ErrorCode.OPENSEARCH_ERROR);
         }
 
-        if (responseNode == null) {
+        if (response == null || response.docs() == null) {
             log.error("[OpenSearch] mget 응답 null");
             throw new BusinessException(ErrorCode.OPENSEARCH_ERROR);
         }
 
-        return extractDocuments(responseNode);
+        return extractFoundDocuments(response.docs());
     }
 
     /**
-     * 단일 출원번호로 조회 (편의 메서드)
+     * 단일 출원번호로 조회
      * 찾지 못하면 null 반환
      */
     public PatentDocument getByApplicationNumber(String applicationNumber) {
@@ -88,38 +91,25 @@ public class OpenSearchClient {
     // ============================================================
 
     /**
-     * mget 응답의 docs 배열에서 found=true인 것만 PatentDocument로 변환
+     * mget docs 중 found=true인 것만 PatentDocument로 추출
      */
-    private List<PatentDocument> extractDocuments(JsonNode responseNode) {
-        JsonNode docsNode = responseNode.get("docs");
-        if (docsNode == null || !docsNode.isArray()) {
-            log.warn("[OpenSearch] docs 배열 없음");
-            return List.of();
-        }
-
+    private List<PatentDocument> extractFoundDocuments(List<MgetDoc> docs) {
         List<PatentDocument> results = new ArrayList<>();
-        for (JsonNode docNode : docsNode) {
-            boolean found = docNode.path("found").asBoolean(false);
-            if (!found) {
-                String missingId = docNode.path("_id").asText();
-                log.warn("[OpenSearch] 문서 없음: {}", missingId);
+        for (MgetDoc doc : docs) {
+            if (!Boolean.TRUE.equals(doc.found())) {
+                log.warn("[OpenSearch] 문서 없음: {}", doc.id());
                 continue;
             }
 
-            JsonNode sourceNode = docNode.get("_source");
-            if (sourceNode == null) {
+            if (doc.source() == null) {
+                log.warn("[OpenSearch] _source 없음: {}", doc.id());
                 continue;
             }
 
-            try {
-                PatentDocument doc = objectMapper.treeToValue(sourceNode, PatentDocument.class);
-                results.add(doc);
-            } catch (Exception e) {
-                log.error("[OpenSearch] 문서 파싱 실패: id={}", docNode.path("_id").asText(), e);
-            }
+            results.add(doc.source());
         }
 
-        log.info("[OpenSearch] mget 성공: 요청={}, 응답={}", docsNode.size(), results.size());
+        log.info("[OpenSearch] mget 성공: 요청={}, 응답={}", docs.size(), results.size());
         return results;
     }
 
@@ -134,4 +124,25 @@ public class OpenSearchClient {
                     return Mono.error(new BusinessException(ErrorCode.OPENSEARCH_ERROR));
                 });
     }
+
+    // ============================================================
+    // 응답 파싱용 record (내부용)
+    // ============================================================
+
+    /**
+     * OpenSearch mget 응답의 최상위 구조
+     */
+    private record MgetResponse(
+            List<MgetDoc> docs
+    ) {}
+
+    /**
+     * mget 응답의 각 문서
+     * _id, found, _source 는 OpenSearch가 반환하는 필드명
+     */
+    private record MgetDoc(
+            @JsonProperty("_id") String id,
+            Boolean found,
+            @JsonProperty("_source") PatentDocument source
+    ) {}
 }

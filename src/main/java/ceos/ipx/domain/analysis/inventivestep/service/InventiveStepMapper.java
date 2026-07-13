@@ -33,7 +33,7 @@ public class InventiveStepMapper {
                 .applicationNumber(priorArt.getApplicationNumber())
                 .title(priorArt.getTitle())
                 .abstractText(document != null ? document.abstractClean() : null)
-                .claimsIndependent(document != null ? document.claimsIndependent() : "")
+                .claimsIndependent(document != null ? document.claimsIndependentAsString() : "")
                 .techPurpose(priorArt.getTechPurpose())
                 .build();
     }

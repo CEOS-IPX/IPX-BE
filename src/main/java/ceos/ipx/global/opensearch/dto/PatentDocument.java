@@ -8,7 +8,9 @@ import java.util.List;
  * OpenSearch에서 조회한 특허 문서
  *
  * mget으로 조회할 때 각 hit의 _source에 매핑되는 구조
- * 진보성/신규성 분석에 필요한 필드만 포함
+ *
+ * 주의: claims_independent는 OpenSearch에 배열로 저장
+ *      Python 전달 시 개행으로 join해서 String으로 변환 필요
  */
 public record PatentDocument(
 
@@ -17,17 +19,26 @@ public record PatentDocument(
 
         String title,
 
-        /**
-         * 초록 (전처리 완료 텍스트)
-         */
         @JsonProperty("abstract_clean")
         String abstractClean,
 
         /**
-         * 독립 청구항
-         * OpenSearch에서는 text 타입 단일 필드
-         * "청구항 N: 본문" 형식이 개행으로 구분되어 저장됨
+         * 독립 청구항 리스트
+         * 각 항목은 "청구항 N: 본문" 형식
+         * OpenSearch에는 List로 저장, Python에는 개행 join된 String으로 전달
          */
         @JsonProperty("claims_independent")
-        String claimsIndependent
-) {}
+        List<String> claimsIndependent
+) {
+
+        /**
+         * 청구항 리스트를 개행으로 join한 문자열 반환
+         * Python API 전달용
+         */
+        public String claimsIndependentAsString() {
+                if (claimsIndependent == null || claimsIndependent.isEmpty()) {
+                        return "";
+                }
+                return String.join("\n", claimsIndependent);
+        }
+}

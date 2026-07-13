@@ -4,6 +4,7 @@ import ceos.ipx.domain.cases.dto.request.AddManualRequest;
 import ceos.ipx.domain.cases.dto.response.PriorArtResponse;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.PriorArt;
+import ceos.ipx.domain.cases.service.common.CaseQueryTxService;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
 import ceos.ipx.global.python.PythonSearchClient;
@@ -32,6 +33,7 @@ import java.util.Set;
 public class PriorArtService {
 
     private final PriorArtTxService txService;
+    private final CaseQueryTxService caseQueryTxService;
     private final PythonSearchClient pythonSearchClient;
     private final RelevanceCalculator relevanceCalculator;
 
@@ -40,8 +42,8 @@ public class PriorArtService {
      * relevance는 전체 개수 기준으로 계산
      */
     public List<PriorArtResponse> getPriorArts(Long userId, Long caseId) {
-        Case caseEntity = txService.findCaseWithAuth(userId, caseId);
-        List<PriorArt> priorArts = txService.findAllPriorArts(caseEntity);
+        Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
+        List<PriorArt> priorArts = caseQueryTxService.findPriorArts(caseEntity);
         return buildResponses(priorArts);
     }
 
@@ -57,7 +59,7 @@ public class PriorArtService {
      */
     public List<PriorArtResponse> addManual(Long userId, Long caseId, AddManualRequest request) {
         // 1. Case 조회 (권한 검증)
-        Case caseEntity = txService.findCaseWithAuth(userId, caseId);
+        Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
 
         // 2. 중복 필터링
         Set<String> duplicates = txService.findDuplicateApplicationNumbers(
@@ -92,7 +94,7 @@ public class PriorArtService {
         txService.saveManualPriorArts(caseId, response);
 
         // 6. 전체 목록 재조회 + relevance 계산
-        List<PriorArt> allPriorArts = txService.findAllPriorArts(caseEntity);
+        List<PriorArt> allPriorArts = caseQueryTxService.findPriorArts(caseEntity);
         return buildResponses(allPriorArts);
     }
 

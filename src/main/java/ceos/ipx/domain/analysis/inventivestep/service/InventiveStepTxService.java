@@ -6,13 +6,8 @@ import ceos.ipx.domain.analysis.inventivestep.entity.InventiveStepAnalysis;
 import ceos.ipx.domain.analysis.inventivestep.repository.InventiveArgumentRepository;
 import ceos.ipx.domain.analysis.inventivestep.repository.InventiveStepAnalysisRepository;
 import ceos.ipx.domain.cases.entity.Case;
-import ceos.ipx.domain.cases.entity.InventionComponent;
 import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.domain.cases.repository.CaseRepository;
-import ceos.ipx.domain.cases.repository.InventionComponentRepository;
-import ceos.ipx.domain.cases.repository.PriorArtRepository;
-import ceos.ipx.domain.user.entity.User;
-import ceos.ipx.domain.user.repository.UserRepository;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -27,46 +22,19 @@ import java.util.Map;
  * 진보성 분석 트랜잭션 처리 Service (self-invoction 문제 해결)
  *
  * 담당:
- *   1. 사전 조회 (Case + Components + PriorArts, 권한 검증)
- *   2. 기존 분석 삭제 (재분석 시)
- *   3. 결과 저장 (analysis + arguments)
+ *   1. 기존 분석 삭제 (재분석 시)
+ *   2. 결과 저장 (analysis + arguments)
+ *
+ * Case + Components + PriorArts 사전 조회는 CaseQueryTxService에 위임
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class InventiveStepTxService {
 
-    private final UserRepository userRepository;
     private final CaseRepository caseRepository;
-    private final InventionComponentRepository componentRepository;
-    private final PriorArtRepository priorArtRepository;
     private final InventiveStepAnalysisRepository analysisRepository;
     private final InventiveArgumentRepository argumentRepository;
-
-    @Transactional(readOnly = true)
-    public Case findCaseWithAuth(Long userId, Long caseId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR));
-
-        return caseRepository.findByIdAndUser(caseId, user)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
-    }
-
-    /**
-     * Case의 구성요소 조회 (displayOrder ASC)
-     */
-    @Transactional(readOnly = true)
-    public List<InventionComponent> findComponents(Case caseEntity) {
-        return componentRepository.findByCaseEntityOrderByDisplayOrderAsc(caseEntity);
-    }
-
-    /**
-     * Case의 모든 선행기술 조회 (rrf_score DESC + created_at ASC)
-     */
-    @Transactional(readOnly = true)
-    public List<PriorArt> findPriorArts(Case caseEntity) {
-        return priorArtRepository.findByCaseEntityOrderByRrfScoreDescCreatedAtAsc(caseEntity);
-    }
 
     /**
      * Case에 기존 분석이 있으면 삭제

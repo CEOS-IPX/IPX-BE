@@ -83,7 +83,7 @@ public class OpenSearchClient {
      */
     public PatentDocument getByApplicationNumber(String applicationNumber) {
         List<PatentDocument> docs = mgetByApplicationNumbers(List.of(applicationNumber));
-        return docs.isEmpty() ? null : docs.get(0);
+        return docs.isEmpty() ? null : docs.getFirst();
     }
 
     // ============================================================
@@ -143,6 +143,7 @@ public class OpenSearchClient {
     private record MgetDoc(
             @JsonProperty("_id") String id,
             Boolean found,
+
             @JsonProperty("_source") PatentDocument source
     ) {}
 }

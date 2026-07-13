@@ -6,6 +6,7 @@ import ceos.ipx.domain.analysis.inventivestep.dto.response.InventiveStepResponse
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.InventionComponent;
 import ceos.ipx.domain.cases.entity.PriorArt;
+import ceos.ipx.domain.cases.service.common.CaseQueryTxService;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
 import ceos.ipx.global.opensearch.OpenSearchClient;
@@ -45,6 +46,7 @@ public class InventiveStepService {
     private static final int D2_CANDIDATE_LIMIT = 5;
 
     private final InventiveStepTxService txService;
+    private final CaseQueryTxService caseQueryTxService;
     private final InventiveStepAsyncService asyncService;
     private final PythonInventiveStepClient pythonClient;
     private final OpenSearchClient openSearchClient;
@@ -57,11 +59,9 @@ public class InventiveStepService {
         log.info("[InventiveStep] 시작: caseId={}, d1={}", caseId, primaryApplicationNumber);
 
         // 1. 사전 조회
-        Case caseEntity = txService.findCaseWithAuth(userId, caseId);
-        List<InventionComponent> components = txService.findComponents(caseEntity);
-        List<PriorArt> priorArts = txService.findPriorArts(caseEntity);
-
-        validatePreconditions(components, priorArts);
+        Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
+        List<InventionComponent> components = caseQueryTxService.findComponents(caseEntity);
+        List<PriorArt> priorArts = caseQueryTxService.findPriorArts(caseEntity);
 
         // 2. D1 확정
         PriorArt d1 = findD1(priorArts, primaryApplicationNumber);
@@ -153,16 +153,6 @@ public class InventiveStepService {
 
         // 10. 응답 조립
         return InventiveStepResponse.of(analysis, d1, d2, recommendedContents);
-    }
-
-
-    private void validatePreconditions(List<InventionComponent> components, List<PriorArt> priorArts) {
-        if (components.isEmpty()) {
-            throw new BusinessException(ErrorCode.COMPONENTS_REQUIRED);
-        }
-        if (priorArts.size() < 2) {
-            throw new BusinessException(ErrorCode.INVENTIVE_STEP_INSUFFICIENT_PRIOR_ARTS);
-        }
     }
 
     private PriorArt findD1(List<PriorArt> priorArts, String primaryApplicationNumber) {

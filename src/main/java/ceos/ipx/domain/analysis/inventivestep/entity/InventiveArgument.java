@@ -35,9 +35,9 @@ public class InventiveArgument extends BaseEntity {
     @Column(name = "argument_type", nullable = false, length = 30)
     private ArgumentType argumentType;
 
-    /** 적용 여부 (변리사가 선택 시 true) */
+    /** AI 추천 여부 */
     @Column(nullable = false)
-    private Boolean applicable;
+    private Boolean recommended;
 
     /**
      * 논리 유형별 구조화된 데이터
@@ -52,23 +52,10 @@ public class InventiveArgument extends BaseEntity {
 
     @Builder
     private InventiveArgument(InventiveStepAnalysis analysis, ArgumentType argumentType,
-                              Boolean applicable, Map<String, Object> content) {
+                              Boolean recommended, Map<String, Object> content) {
         this.analysis = analysis;
         this.argumentType = argumentType;
-        this.applicable = applicable != null ? applicable : false;
+        this.recommended = recommended != null ? recommended : false;
         this.content = content != null ? content : new HashMap<>();
-    }
-
-    public void markApplicable() {
-        this.applicable = true;
-    }
-
-    public void markNotApplicable() {
-        this.applicable = false;
-    }
-
-    public void updateContent(Map<String, Object> content) {
-        this.content = content != null ? content : new HashMap<>();
-        this.applicable = true;
     }
 }

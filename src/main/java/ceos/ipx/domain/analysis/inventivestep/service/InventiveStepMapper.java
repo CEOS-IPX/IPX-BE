@@ -85,7 +85,8 @@ public class InventiveStepMapper {
      */
     public Map<String, Object> toContentMap(PythonCommonTechniqueResult result) {
         return Map.of(
-                "target_component", result.targetComponent(),
+                "target_label", result.targetLabel(),
+                "target_name", result.targetName(),
                 "rebuttal", result.rebuttal()
         );
     }
@@ -95,7 +96,8 @@ public class InventiveStepMapper {
      */
     public Map<String, Object> toContentMap(PythonSimpleDesignResult result) {
         return Map.of(
-                "changed_component", result.changedComponent(),
+                "changed_component_label", result.changedComponentLabel(),
+                "changed_component_name", result.changedComponentName(),
                 "non_obviousness", result.nonObviousness()
         );
     }

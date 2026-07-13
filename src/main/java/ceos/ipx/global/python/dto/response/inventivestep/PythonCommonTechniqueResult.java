@@ -5,13 +5,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Python /analyze/inventive-step/generate/common-technique
  *
- * target_component: 반박 대상 구성요소 라벨 (A/B/C/...)
+ * target_label: 반박 대상 구성요소 라벨 (A/B/C/...)
+ * target_name: 반박 대상 구서요소 이름
  * rebuttal:         주지관용기술이 아니라는 반박 논리 (150~250자)
  */
 public record PythonCommonTechniqueResult(
 
-        @JsonProperty("target_component")
-        String targetComponent,
+        @JsonProperty("target_label")
+        String targetLabel,
+
+        @JsonProperty("target_name")
+        String targetName,
 
         String rebuttal
 ) {}

@@ -100,9 +100,9 @@ public record InventiveStepResponse(
               - COMBINATION_MOTIVATION:
                   { "background_limit": "...", "teaching_away": "..." }
               - COMMON_TECHNIQUE:
-                  { "target_component": "B", "rebuttal": "..." }
+                  { "target_label": "B", "target_name": "...", "rebuttal": "..." }
               - SIMPLE_DESIGN:
-                  { "changed_component": "C", "non_obviousness": "..." }
+                  { "changed_component_label": "C", "changed_component_name": "...", "non_obviousness": "..." }
             
             recommended=false 일 때 content는 빈 Map.
             """)

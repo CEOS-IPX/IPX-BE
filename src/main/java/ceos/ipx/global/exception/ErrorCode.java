@@ -50,10 +50,17 @@ public enum ErrorCode {
     SEARCH_NOT_FOUND(HttpStatus.NOT_FOUND, "S002", "검색 정보를 찾을 수 없습니다."),
     COMPONENTS_REQUIRED(HttpStatus.BAD_REQUEST, "S003", "구성요소가 최소 1개 이상 필요합니다."),
 
-
     // ===== 선행기술 관련 =====
     PRIOR_ART_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "해당 선행기술을 찾을 수 없습니다."),
-    ALL_PATENTS_ALREADY_EXIST(HttpStatus.CONFLICT, "P002", "모든 특허가 이미 추가되어 있습니다.");
+    ALL_PATENTS_ALREADY_EXIST(HttpStatus.CONFLICT, "P002", "모든 특허가 이미 추가되어 있습니다."),
+    PRIOR_ART_DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "P004", "선행기술 문서를 찾을 수 없습니다."),
+
+    // ==== OpenSearch 관련 ====
+    OPENSEARCH_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "O001", "특허 검색 서버와 통신 중 오류가 발생했습니다."),
+
+    // ==== 진보성 분석 관련 ====
+    INVENTIVE_STEP_NO_CANDIDATES(HttpStatus.BAD_REQUEST, "I001", "부인용 D2로 사용할 후보가 없습니다."),
+    INVENTIVE_STEP_INSUFFICIENT_PRIOR_ARTS(HttpStatus.BAD_REQUEST, "I002", "진보성 분석에는 최소 2개의 선행기술이 필요합니다.");
 
 
     private final HttpStatus status;

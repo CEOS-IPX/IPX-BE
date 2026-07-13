@@ -2,7 +2,7 @@ package ceos.ipx.domain.cases.controller;
 
 import ceos.ipx.domain.cases.dto.request.ComponentExtractRequest;
 import ceos.ipx.domain.cases.dto.response.ComponentExtractResponse;
-import ceos.ipx.domain.cases.service.ComponentService;
+import ceos.ipx.domain.cases.service.component.ComponentService;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

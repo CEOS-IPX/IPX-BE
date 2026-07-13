@@ -1,4 +1,4 @@
-package ceos.ipx.domain.cases.service;
+package ceos.ipx.domain.cases.service.priorart;
 
 import ceos.ipx.domain.cases.dto.request.AddManualRequest;
 import ceos.ipx.domain.cases.dto.response.PriorArtResponse;
@@ -7,8 +7,8 @@ import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
 import ceos.ipx.global.python.PythonSearchClient;
-import ceos.ipx.global.python.dto.request.PythonAddManualRequest;
-import ceos.ipx.global.python.dto.response.PythonAddManualResponse;
+import ceos.ipx.global.python.dto.request.search.PythonAddManualRequest;
+import ceos.ipx.global.python.dto.response.search.PythonAddManualResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

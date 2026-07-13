@@ -1,9 +1,9 @@
-package ceos.ipx.domain.cases.service;
+package ceos.ipx.domain.cases.service.common;
 
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.domain.cases.entity.PriorArtSource;
-import ceos.ipx.global.python.dto.response.PythonSearchResultResponse;
+import ceos.ipx.global.python.dto.response.search.PythonSearchResultResponse;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;

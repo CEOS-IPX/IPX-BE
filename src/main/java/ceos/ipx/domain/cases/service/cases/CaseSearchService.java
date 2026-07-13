@@ -1,11 +1,11 @@
-package ceos.ipx.domain.cases.service;
+package ceos.ipx.domain.cases.service.cases;
 
 import ceos.ipx.domain.cases.dto.request.SearchRequest;
 import ceos.ipx.domain.cases.dto.response.SearchStartResponse;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.global.python.PythonSearchClient;
-import ceos.ipx.global.python.dto.response.PythonCancelResponse;
-import ceos.ipx.global.python.dto.response.PythonSearchStatusResponse;
+import ceos.ipx.global.python.dto.response.search.PythonCancelResponse;
+import ceos.ipx.global.python.dto.response.search.PythonSearchStatusResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

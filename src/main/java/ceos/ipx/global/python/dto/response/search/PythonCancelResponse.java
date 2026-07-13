@@ -1,4 +1,4 @@
-package ceos.ipx.global.python.dto.response;
+package ceos.ipx.global.python.dto.response.search;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;

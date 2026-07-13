@@ -7,8 +7,8 @@ import ceos.ipx.global.python.dto.response.inventivestep.PythonCombinationMotiva
 import ceos.ipx.global.python.dto.response.inventivestep.PythonCommonTechniqueResult;
 import ceos.ipx.global.python.dto.response.inventivestep.PythonNumericalLimitResult;
 import ceos.ipx.global.python.dto.response.inventivestep.PythonSimpleDesignResult;
-import ceos.ipx.global.python.dto.shared.PythonInventionComponent;
-import ceos.ipx.global.python.dto.shared.PythonPriorArtInfo;
+import ceos.ipx.global.python.dto.common.PythonInventionComponent;
+import ceos.ipx.global.python.dto.common.PythonPriorArtInfo;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

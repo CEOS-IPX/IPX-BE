@@ -1,4 +1,4 @@
-package ceos.ipx.global.python.dto.response;
+package ceos.ipx.global.python.dto.response.search;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package ceos.ipx.global.python.dto.request;
+package ceos.ipx.global.python.dto.request.search;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

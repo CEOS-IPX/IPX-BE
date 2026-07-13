@@ -1,7 +1,7 @@
 package ceos.ipx.global.python.dto.request.inventivestep;
 
-import ceos.ipx.global.python.dto.shared.PythonInventionComponent;
-import ceos.ipx.global.python.dto.shared.PythonPriorArtInfo;
+import ceos.ipx.global.python.dto.common.PythonInventionComponent;
+import ceos.ipx.global.python.dto.common.PythonPriorArtInfo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 

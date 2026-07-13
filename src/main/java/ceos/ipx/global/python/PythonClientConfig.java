@@ -1,4 +1,4 @@
-package ceos.ipx.global.config;
+package ceos.ipx.global.python;
 
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;

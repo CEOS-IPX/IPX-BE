@@ -3,7 +3,6 @@ package ceos.ipx.global.opensearch;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -19,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Configuration
-public class OpenSearchConfig {
+public class OpenSearchClientConfig {
 
     @Value("${opensearch.host:localhost}")
     private String host;

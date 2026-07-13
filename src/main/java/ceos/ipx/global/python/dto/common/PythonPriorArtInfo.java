@@ -1,4 +1,4 @@
-package ceos.ipx.global.python.dto.shared;
+package ceos.ipx.global.python.dto.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

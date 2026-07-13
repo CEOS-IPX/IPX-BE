@@ -2,12 +2,12 @@ package ceos.ipx.global.python;
 
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
-import ceos.ipx.global.python.dto.request.PythonAddManualRequest;
-import ceos.ipx.global.python.dto.request.PythonSearchRequest;
-import ceos.ipx.global.python.dto.response.PythonAddManualResponse;
-import ceos.ipx.global.python.dto.response.PythonCancelResponse;
-import ceos.ipx.global.python.dto.response.PythonSearchResultResponse;
-import ceos.ipx.global.python.dto.response.PythonSearchStatusResponse;
+import ceos.ipx.global.python.dto.request.search.PythonAddManualRequest;
+import ceos.ipx.global.python.dto.request.search.PythonSearchRequest;
+import ceos.ipx.global.python.dto.response.search.PythonAddManualResponse;
+import ceos.ipx.global.python.dto.response.search.PythonCancelResponse;
+import ceos.ipx.global.python.dto.response.search.PythonSearchResultResponse;
+import ceos.ipx.global.python.dto.response.search.PythonSearchStatusResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

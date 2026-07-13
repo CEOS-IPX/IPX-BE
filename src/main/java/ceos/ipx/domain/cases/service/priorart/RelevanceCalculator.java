@@ -1,4 +1,4 @@
-package ceos.ipx.domain.cases.service;
+package ceos.ipx.domain.cases.service.priorart;
 
 import org.springframework.stereotype.Component;
 

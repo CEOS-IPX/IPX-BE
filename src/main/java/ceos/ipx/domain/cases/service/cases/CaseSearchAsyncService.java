@@ -1,9 +1,9 @@
-package ceos.ipx.domain.cases.service;
+package ceos.ipx.domain.cases.service.cases;
 
 import ceos.ipx.domain.cases.dto.request.SearchRequest;
 import ceos.ipx.global.python.PythonSearchClient;
-import ceos.ipx.global.python.dto.request.PythonSearchRequest;
-import ceos.ipx.global.python.dto.response.PythonSearchResultResponse;
+import ceos.ipx.global.python.dto.request.search.PythonSearchRequest;
+import ceos.ipx.global.python.dto.response.search.PythonSearchResultResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;

@@ -1,10 +1,10 @@
-package ceos.ipx.domain.cases.service;
+package ceos.ipx.domain.cases.service.component;
 
 import ceos.ipx.domain.cases.dto.request.ComponentExtractRequest;
 import ceos.ipx.domain.cases.dto.response.ComponentExtractResponse;
 import ceos.ipx.global.python.PythonComponentClient;
-import ceos.ipx.global.python.dto.request.PythonComponentExtractRequest;
-import ceos.ipx.global.python.dto.response.PythonComponentExtractResponse;
+import ceos.ipx.global.python.dto.request.search.PythonComponentExtractRequest;
+import ceos.ipx.global.python.dto.response.search.PythonComponentExtractResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

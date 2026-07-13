@@ -1,4 +1,4 @@
-package ceos.ipx.domain.cases.service;
+package ceos.ipx.domain.cases.service.cases;
 
 import ceos.ipx.domain.analysis.inventivestep.repository.InventiveArgumentRepository;
 import ceos.ipx.domain.analysis.inventivestep.repository.InventiveStepAnalysisRepository;
@@ -11,12 +11,13 @@ import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.domain.cases.repository.CaseRepository;
 import ceos.ipx.domain.cases.repository.InventionComponentRepository;
 import ceos.ipx.domain.cases.repository.PriorArtRepository;
+import ceos.ipx.domain.cases.service.common.PriorArtMapper;
 import ceos.ipx.domain.report.repository.ReportRepository;
 import ceos.ipx.domain.user.entity.User;
 import ceos.ipx.domain.user.repository.UserRepository;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
-import ceos.ipx.global.python.dto.response.PythonSearchResultResponse;
+import ceos.ipx.global.python.dto.response.search.PythonSearchResultResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

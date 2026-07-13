@@ -186,7 +186,7 @@ CREATE TABLE IF NOT EXISTS inventive_arguments (
     id              BIGSERIAL       PRIMARY KEY,
     analysis_id     BIGINT          NOT NULL REFERENCES inventive_step_analyses(id) ON DELETE CASCADE,
     argument_type   VARCHAR(30)     NOT NULL,
-    applicable      BOOLEAN         NOT NULL DEFAULT FALSE,
+    recommended      BOOLEAN         NOT NULL DEFAULT FALSE,
     content         JSONB,
     created_at      TIMESTAMP       NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP       NOT NULL DEFAULT NOW(),

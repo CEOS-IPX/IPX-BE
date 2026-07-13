@@ -25,6 +25,11 @@ python:
     base-url: ${SEARCH_SERVER_URL:http://localhost:8000}
     timeout-seconds: 120
 
+opensearch:
+  host: ${OPENSEARCH_HOST:localhost}
+  port: ${OPENSEARCH_PORT:9200}
+  index: patents
+
 server:
   port: 8080
 

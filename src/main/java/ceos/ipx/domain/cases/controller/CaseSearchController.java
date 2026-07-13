@@ -2,9 +2,9 @@ package ceos.ipx.domain.cases.controller;
 
 import ceos.ipx.domain.cases.dto.request.SearchRequest;
 import ceos.ipx.domain.cases.dto.response.SearchStartResponse;
-import ceos.ipx.domain.cases.service.CaseSearchService;
-import ceos.ipx.global.python.dto.response.PythonCancelResponse;
-import ceos.ipx.global.python.dto.response.PythonSearchStatusResponse;
+import ceos.ipx.domain.cases.service.cases.CaseSearchService;
+import ceos.ipx.global.python.dto.response.search.PythonCancelResponse;
+import ceos.ipx.global.python.dto.response.search.PythonSearchStatusResponse;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

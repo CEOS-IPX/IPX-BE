@@ -2,7 +2,7 @@ package ceos.ipx.domain.cases.controller;
 
 import ceos.ipx.domain.cases.dto.request.AddManualRequest;
 import ceos.ipx.domain.cases.dto.response.PriorArtResponse;
-import ceos.ipx.domain.cases.service.PriorArtService;
+import ceos.ipx.domain.cases.service.priorart.PriorArtService;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

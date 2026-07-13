@@ -2,8 +2,8 @@ package ceos.ipx.global.python;
 
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
-import ceos.ipx.global.python.dto.request.PythonComponentExtractRequest;
-import ceos.ipx.global.python.dto.response.PythonComponentExtractResponse;
+import ceos.ipx.global.python.dto.request.search.PythonComponentExtractRequest;
+import ceos.ipx.global.python.dto.response.search.PythonComponentExtractResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;

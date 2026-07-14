@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -113,8 +114,7 @@ public class OpenSearchClient {
         return results;
     }
 
-    private Mono<? extends Throwable> handleError(
-            org.springframework.web.reactive.function.client.ClientResponse response) {
+    private Mono<? extends Throwable> handleError(ClientResponse response) {
         HttpStatusCode status = response.statusCode();
 
         return response.bodyToMono(String.class)

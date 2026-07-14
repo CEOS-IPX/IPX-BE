@@ -31,6 +31,46 @@ public record InventiveStepResponse(
         @Schema(description = "4개 카테고리 진보성 논리 (항상 4개, recommended 여부로 구분)")
         List<ArgumentDto> arguments
 ) {
+    // 카테고리별 기본 안내 문구
+    private static final Map<String, Object> NUMERICAL_LIMIT_PLACEHOLDER = Map.of(
+            "effect_items", List.of(Map.of(
+                    "metric", "측정 지표를 입력하세요 (예: 진단 정확도)",
+                    "unit", "단위를 입력하세요 (예: %)",
+                    "prior_art_value", "종래기술 수치를 입력하세요",
+                    "invention_value", "본 발명 수치를 입력하세요",
+                    "improvement", "개선률을 입력하세요"
+            ))
+    );
+
+    private static final Map<String, Object> COMBINATION_MOTIVATION_PLACEHOLDER = Map.of(
+            "background_limit", "종래기술의 근본적 한계를 직접 입력하세요",
+            "teaching_away", "D1과 D2를 결합할 동기가 없는 이유를 직접 입력하세요"
+    );
+
+    private static final Map<String, Object> COMMON_TECHNIQUE_PLACEHOLDER = Map.of(
+            "target_label", "",
+            "target_name", "",
+            "rebuttal", "주지관용기술이 아니라는 반박 논리를 직접 입력하세요"
+    );
+
+    private static final Map<String, Object> SIMPLE_DESIGN_PLACEHOLDER = Map.of(
+            "changed_component_label", "",
+            "changed_component_name", "",
+            "non_obviousness", "단순 설계 변경이 아닌 비자명한 개선이라는 논거를 직접 입력하세요"
+    );
+
+    /**
+     * 카테고리별 기본 안내 문구 반환
+     * recommended=false 케이스에서 프론트에 어떤 필드를 채워야 할지 안내
+     */
+    private static Map<String, Object> placeholderFor(ArgumentType type) {
+        return switch (type) {
+            case NUMERICAL_LIMIT -> NUMERICAL_LIMIT_PLACEHOLDER;
+            case COMBINATION_MOTIVATION -> COMBINATION_MOTIVATION_PLACEHOLDER;
+            case COMMON_TECHNIQUE -> COMMON_TECHNIQUE_PLACEHOLDER;
+            case SIMPLE_DESIGN -> SIMPLE_DESIGN_PLACEHOLDER;
+        };
+    }
 
     public static InventiveStepResponse of(
             InventiveStepAnalysis analysis,
@@ -60,7 +100,7 @@ public record InventiveStepResponse(
     ) {
         Map<String, Object> content = recommendedContents.get(type);
         boolean recommended = content != null;
-        return new ArgumentDto(type, recommended, recommended ? content : Map.of());
+        return new ArgumentDto(type, recommended, recommended ? content : placeholderFor(type));
     }
 
 

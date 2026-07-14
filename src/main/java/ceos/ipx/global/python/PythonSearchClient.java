@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -173,8 +174,7 @@ public class PythonSearchClient {
     // 예외 매핑
     // ============================================================
 
-    private Mono<? extends Throwable> handleError(
-            org.springframework.web.reactive.function.client.ClientResponse response) {
+    private Mono<? extends Throwable> handleError(ClientResponse response) {
         HttpStatusCode status = response.statusCode();
 
         return response.bodyToMono(String.class)

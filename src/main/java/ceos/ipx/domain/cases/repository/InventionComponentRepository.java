@@ -13,6 +13,8 @@ public interface InventionComponentRepository extends JpaRepository<InventionCom
 
     List<InventionComponent> findByCaseEntityOrderByDisplayOrderAsc(Case caseEntity);
 
+    long countByCaseEntity(Case caseEntity);
+
     @Modifying
     @Query("DELETE FROM InventionComponent ic WHERE ic.caseEntity.id = :caseId")
     void deleteAllByCaseId(@Param("caseId") Long caseId);

@@ -1,11 +1,11 @@
 package ceos.ipx.domain.cases.dto.response;
 
 import ceos.ipx.domain.cases.entity.PriorArt;
-import ceos.ipx.domain.cases.entity.PriorArtSource;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
 import java.util.List;
+import ceos.ipx.domain.cases.entity.PriorArtSource;
 
 /**
  * 선행기술 조회 응답
@@ -31,7 +31,11 @@ public record PriorArtResponse(
         @Schema(description = "등록일", example = "2018-08-09", nullable = true)
         LocalDate registrationDate,
 
-        @Schema(description = "법적 상태", example = "등록", allowableValues = {"공개", "등록", "소멸", "취하", "거절"})
+        @Schema(
+                description = "법적 상태",
+                example = "등록",
+                allowableValues = {"공개", "등록", "소멸", "취하", "거절"}
+        )
         String legalStatus,
 
         @Schema(description = "IPC 분류 코드", example = "[\"G06F 11/00\", \"G06N 3/08\"]")
@@ -55,8 +59,16 @@ public record PriorArtResponse(
         @Schema(description = "RRF 스코어 (알고리즘 내부 값)", example = "0.045")
         Double rrfScore,
 
-        @Schema(description = "관련도 등급", example = "매우 높음", allowableValues = {"매우 높음", "높음", "보통", "낮음"})
-        String relevance
+        @Schema(
+                description = "관련도 등급",
+                example = "매우 높음",
+                allowableValues = {"매우 높음", "높음", "보통", "낮음"}
+        )
+        String relevance,
+
+        @Schema(description = "신규성·진보성 분석 포함 여부", example = "true")
+        boolean included
+
 ) {
 
     public static PriorArtResponse of(PriorArt priorArt, String relevance) {
@@ -75,7 +87,8 @@ public record PriorArtResponse(
                 priorArt.getMatchedKeywords(),
                 priorArt.getReason(),
                 priorArt.getRrfScore(),
-                relevance
+                relevance,
+                priorArt.isIncluded()
         );
     }
 }

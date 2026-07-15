@@ -51,6 +51,21 @@ public class PriorArtTxService {
     }
 
     /**
+     * 선행문헌 분석 포함 여부 수정
+     */
+    @Transactional
+    public PriorArt updateIncluded(
+            Long userId,
+            Long priorArtId,
+            boolean included
+    ) {
+        PriorArt priorArt = findPriorArtWithAuth(userId, priorArtId);
+        priorArt.updateIncluded(included);
+
+        return priorArt;
+    }
+
+    /**
      * 중복 확인: 이미 존재하는 출원번호 리스트 반환
      */
     @Transactional(readOnly = true)

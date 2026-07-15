@@ -20,9 +20,17 @@ import java.util.List;
 @Table(
         name = "prior_arts",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_pa_case_app_num", columnNames = {"case_id", "application_number"})
+                @UniqueConstraint(
+                        name = "uk_pa_case_app_num",
+                        columnNames = {"case_id", "application_number"}
+                )
         },
-        indexes = { @Index(name = "idx_pa_case_rrf", columnList = "case_id, rrf_score DESC") }
+        indexes = {
+                @Index(
+                        name = "idx_pa_case_rrf",
+                        columnList = "case_id, rrf_score DESC"
+                )
+        }
 )
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -79,22 +87,38 @@ public class PriorArt {
     private List<String> keyFeatures = new ArrayList<>();
 
     @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "matched_keywords", columnDefinition = "TEXT[]", nullable = false)
+    @Column(
+            name = "matched_keywords",
+            columnDefinition = "TEXT[]",
+            nullable = false
+    )
     private List<String> matchedKeywords = new ArrayList<>();
+
+    @Column(nullable = false)
+    private boolean included = true;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Builder
-    private PriorArt(Case caseEntity, String applicationNumber,
-                     String title, String applicantName,
-                     LocalDate applicationDate, LocalDate registrationDate,
-                     String legalStatus, List<String> ipcCodes,
-                     PriorArtSource source, Double rrfScore,
-                     String summary, String techPurpose,
-                     List<String> keyFeatures, List<String> matchedKeywords,
-                     String reason) {
+    private PriorArt(
+            Case caseEntity,
+            String applicationNumber,
+            String title,
+            String applicantName,
+            LocalDate applicationDate,
+            LocalDate registrationDate,
+            String legalStatus,
+            List<String> ipcCodes,
+            PriorArtSource source,
+            Double rrfScore,
+            String summary,
+            String techPurpose,
+            List<String> keyFeatures,
+            List<String> matchedKeywords,
+            String reason
+    ) {
         this.caseEntity = caseEntity;
         this.applicationNumber = applicationNumber;
         this.title = title;
@@ -108,9 +132,12 @@ public class PriorArt {
         this.summary = summary;
         this.techPurpose = techPurpose;
         this.keyFeatures = keyFeatures != null ? keyFeatures : new ArrayList<>();
-        this.matchedKeywords = matchedKeywords != null ? matchedKeywords : new ArrayList<>();
+        this.matchedKeywords =
+                matchedKeywords != null ? matchedKeywords : new ArrayList<>();
         this.reason = reason;
     }
+
+    public void updateIncluded(boolean included) {
+        this.included = included;
+    }
 }
-
-

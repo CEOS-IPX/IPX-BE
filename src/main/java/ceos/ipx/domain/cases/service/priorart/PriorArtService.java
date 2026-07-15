@@ -19,6 +19,7 @@ import java.util.Set;
 import ceos.ipx.domain.cases.dto.response.PriorArtDetailResponse;
 import ceos.ipx.global.opensearch.OpenSearchClient;
 import ceos.ipx.global.opensearch.dto.PatentDocument;
+import ceos.ipx.domain.cases.dto.response.UpdatePriorArtInclusionResponse;
 
 /**
  * 선행기술 조회/관리 서비스
@@ -70,6 +71,23 @@ public class PriorArtService {
         }
 
         return PriorArtDetailResponse.of(priorArt, patentDocument);
+    }
+
+    /**
+     * 선행문헌 분석 포함 여부 수정
+     */
+    public UpdatePriorArtInclusionResponse updatePriorArtInclusion(
+            Long userId,
+            Long priorArtId,
+            boolean included
+    ) {
+        PriorArt priorArt = txService.updateIncluded(
+                userId,
+                priorArtId,
+                included
+        );
+
+        return UpdatePriorArtInclusionResponse.from(priorArt);
     }
 
     /**

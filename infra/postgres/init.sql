@@ -142,6 +142,7 @@ CREATE TABLE IF NOT EXISTS prior_arts (
     tech_purpose        TEXT,
     key_features        TEXT[],
     matched_keywords    TEXT[]          NOT NULL DEFAULT '{}',
+    included            BOOLEAN         NOT NULL DEFAULT TRUE,
     created_at          TIMESTAMP       NOT NULL DEFAULT NOW(),
 
     UNIQUE(case_id, application_number)

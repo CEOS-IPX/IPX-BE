@@ -82,7 +82,13 @@ public record PriorArtDetailResponse(
         List<String> matchedKeywords,
 
         @Schema(description = "선행문헌 추가 일시")
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+
+        @Schema(
+                description = "신규성·진보성 분석 포함 여부",
+                example = "true"
+        )
+        boolean included
 
 ) {
 
@@ -134,7 +140,8 @@ public record PriorArtDetailResponse(
                 priorArt.getTechPurpose(),
                 emptyIfNull(priorArt.getKeyFeatures()),
                 emptyIfNull(priorArt.getMatchedKeywords()),
-                priorArt.getCreatedAt()
+                priorArt.getCreatedAt(),
+                priorArt.isIncluded()
         );
     }
 

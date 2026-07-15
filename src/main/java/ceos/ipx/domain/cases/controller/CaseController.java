@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ceos.ipx.domain.cases.dto.response.CaseDeleteResponse;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 @Tag(name = "Case", description = "사건 관리 API")
 @RestController
@@ -81,6 +83,20 @@ public class CaseController {
     ) {
         return ApiResponse.ok(
                 caseService.updateCase(userId, caseId, request)
+        );
+    }
+
+    @Operation(
+            summary = "사건 삭제",
+            description = "로그인한 사용자가 자신이 생성한 사건과 연관 데이터를 삭제합니다."
+    )
+    @DeleteMapping("/{caseId}")
+    public ApiResponse<CaseDeleteResponse> deleteCase(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long caseId
+    ) {
+        return ApiResponse.ok(
+                caseService.deleteCase(userId, caseId)
         );
     }
 

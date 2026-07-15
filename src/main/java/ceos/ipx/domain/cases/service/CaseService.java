@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ceos.ipx.domain.cases.dto.request.CaseUpdateRequest;
 import ceos.ipx.domain.cases.dto.response.CaseUpdateResponse;
+import ceos.ipx.domain.cases.dto.response.CaseDeleteResponse;
 
 import java.util.List;
 
@@ -70,6 +71,24 @@ public class CaseService {
                 .applicantName(caseEntity.getApplicantName())
                 .inventorName(caseEntity.getInventorName())
                 .updatedAt(caseEntity.getUpdatedAt())
+                .build();
+    }
+
+    @Transactional
+    public CaseDeleteResponse deleteCase(Long userId, Long caseId) {
+        Case caseEntity = caseRepository.findById(caseId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
+
+        if (!caseEntity.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.CASE_ACCESS_DENIED);
+        }
+
+        Long deletedCaseId = caseEntity.getId();
+
+        caseRepository.delete(caseEntity);
+
+        return CaseDeleteResponse.builder()
+                .deletedCaseId(deletedCaseId)
                 .build();
     }
 

@@ -36,6 +36,21 @@ public class PriorArtTxService {
     private final PriorArtMapper priorArtMapper;
 
     /**
+     * 선행문헌 단건 조회 및 사건 소유권 검증
+     */
+    @Transactional(readOnly = true)
+    public PriorArt findPriorArtWithAuth(Long userId, Long priorArtId) {
+        PriorArt priorArt = priorArtRepository.findById(priorArtId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRIOR_ART_NOT_FOUND));
+
+        if (!priorArt.getCaseEntity().getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.CASE_ACCESS_DENIED);
+        }
+
+        return priorArt;
+    }
+
+    /**
      * 중복 확인: 이미 존재하는 출원번호 리스트 반환
      */
     @Transactional(readOnly = true)

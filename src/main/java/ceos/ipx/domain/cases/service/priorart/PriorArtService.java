@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Set;
+import ceos.ipx.domain.cases.dto.response.PriorArtDetailResponse;
+import ceos.ipx.global.opensearch.OpenSearchClient;
+import ceos.ipx.global.opensearch.dto.PatentDocument;
 
 /**
  * 선행기술 조회/관리 서비스
@@ -36,6 +39,7 @@ public class PriorArtService {
     private final CaseQueryTxService caseQueryTxService;
     private final PythonSearchClient pythonSearchClient;
     private final RelevanceCalculator relevanceCalculator;
+    private final OpenSearchClient openSearchClient;
 
     /**
      * 사건의 모든 선행기술 조회 (rrf_score DESC + created_at ASC)
@@ -45,6 +49,27 @@ public class PriorArtService {
         Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
         List<PriorArt> priorArts = caseQueryTxService.findPriorArts(caseEntity);
         return buildResponses(priorArts);
+    }
+
+    /**
+     * 선행문헌 상세 조회
+     *
+     * 1. priorArtId로 PostgreSQL PriorArt 조회
+     * 2. 사건 소유권 검증
+     * 3. 출원번호로 OpenSearch 원본 특허 조회
+     * 4. PostgreSQL 사건별 정보와 OpenSearch 원본 정보를 병합
+     */
+    public PriorArtDetailResponse getPriorArtDetail(Long userId, Long priorArtId) {
+        PriorArt priorArt = txService.findPriorArtWithAuth(userId, priorArtId);
+
+        PatentDocument patentDocument =
+                openSearchClient.getByApplicationNumber(priorArt.getApplicationNumber());
+
+        if (patentDocument == null) {
+            throw new BusinessException(ErrorCode.PRIOR_ART_DOCUMENT_NOT_FOUND);
+        }
+
+        return PriorArtDetailResponse.of(priorArt, patentDocument);
     }
 
     /**

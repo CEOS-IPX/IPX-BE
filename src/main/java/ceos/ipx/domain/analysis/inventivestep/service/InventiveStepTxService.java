@@ -38,7 +38,7 @@ public class InventiveStepTxService {
 
     @Transactional(readOnly = true)
     public InventiveStepAnalysis findAnalysis(Case caseEntity) {
-        return analysisRepository.findByCaseEntity(caseEntity)
+        return analysisRepository.findByCaseEntityWithArts(caseEntity)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVENTIVE_STEP_ANALYSIS_NOT_FOUND));
     }
 

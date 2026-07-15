@@ -13,6 +13,16 @@ public interface InventiveStepAnalysisRepository extends JpaRepository<Inventive
 
     Optional<InventiveStepAnalysis> findByCaseEntity(Case caseEntity);
 
+    /**
+     * Case로 분석 + D1/D2 fetch join 조회
+     * GET 조회 시 응답 조립에서 PriorArt 접근이 필요하므로
+     */
+    @Query("SELECT a FROM InventiveStepAnalysis a " +
+            "JOIN FETCH a.primaryArt " +
+            "LEFT JOIN FETCH a.secondaryArt " +
+            "WHERE a.caseEntity = :caseEntity")
+    Optional<InventiveStepAnalysis> findByCaseEntityWithArts(@Param("caseEntity") Case caseEntity);
+
     @Modifying
     @Query("DELETE FROM InventiveStepAnalysis i WHERE i.caseEntity.id = :caseId")
     void deleteAllByCaseId(@Param("caseId") Long caseId);

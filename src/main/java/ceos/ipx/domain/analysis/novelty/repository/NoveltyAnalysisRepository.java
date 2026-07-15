@@ -11,6 +11,13 @@ import java.util.Optional;
 
 public interface NoveltyAnalysisRepository extends JpaRepository<NoveltyAnalysis, Long> {
 
+    /**
+     * Case로 저장된 분석 조회 (D1 fetch join)
+     * GET 조회 시 응답 조립에서 PriorArt 접근이 필요하므로
+     */
+    @Query("SELECT n FROM NoveltyAnalysis n " +
+            "JOIN FETCH n.d1PriorArt " +
+            "WHERE n.caseEntity = :caseEntity")
     Optional<NoveltyAnalysis> findByCaseEntity(Case caseEntity);
 
     @Modifying

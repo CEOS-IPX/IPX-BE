@@ -1,11 +1,13 @@
 package ceos.ipx.domain.analysis.inventivestep.dto.response;
 
 import ceos.ipx.domain.analysis.inventivestep.entity.ArgumentType;
+import ceos.ipx.domain.analysis.inventivestep.entity.InventiveArgument;
 import ceos.ipx.domain.analysis.inventivestep.entity.InventiveStepAnalysis;
 import ceos.ipx.domain.cases.entity.PriorArt;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -101,6 +103,53 @@ public record InventiveStepResponse(
         Map<String, Object> content = recommendedContents.get(type);
         boolean recommended = content != null;
         return new ArgumentDto(type, recommended, recommended ? content : placeholderFor(type));
+    }
+
+    /**
+     * GET /api/cases/{caseId}/inventive-step
+     *
+     * DB에서 조회한 4개 argument를 카테고리별로 매핑한 뒤,
+     * recommended=false는 placeholder로 대체
+     */
+
+    public static InventiveStepResponse ofEntities(
+            InventiveStepAnalysis analysis,
+            List<InventiveArgument> argumentEntities
+    ) {
+        // 카테고리 → argument 매핑
+        Map<ArgumentType, InventiveArgument> byType = new EnumMap<>(ArgumentType.class);
+        for (InventiveArgument arg : argumentEntities) {
+            byType.put(arg.getArgumentType(), arg);
+        }
+
+        List<ArgumentDto> argumentDtos = List.of(
+                fromEntity(ArgumentType.NUMERICAL_LIMIT, byType),
+                fromEntity(ArgumentType.COMBINATION_MOTIVATION, byType),
+                fromEntity(ArgumentType.COMMON_TECHNIQUE, byType),
+                fromEntity(ArgumentType.SIMPLE_DESIGN, byType)
+        );
+
+        return new InventiveStepResponse(
+                analysis.getId(),
+                PriorArtBrief.of(analysis.getPrimaryArt()),
+                analysis.getSecondaryArt() != null ? PriorArtBrief.of(analysis.getSecondaryArt()) : null,
+                argumentDtos
+        );
+    }
+
+    /**
+     * DB 엔티티 하나를 ArgumentDto로 변환
+     * 엔티티가 없거나 recommended=false면 placeholder 사용
+     */
+    private static ArgumentDto fromEntity(
+            ArgumentType type,
+            Map<ArgumentType, InventiveArgument> byType
+    ) {
+        InventiveArgument arg = byType.get(type);
+        if (arg == null || !Boolean.TRUE.equals(arg.getRecommended())) {
+            return new ArgumentDto(type, false, placeholderFor(type));
+        }
+        return new ArgumentDto(type, true, arg.getContent());
     }
 
 

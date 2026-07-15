@@ -1,6 +1,7 @@
 package ceos.ipx.domain.analysis.inventivestep.service;
 
 import ceos.ipx.domain.analysis.inventivestep.entity.ArgumentType;
+import ceos.ipx.domain.analysis.inventivestep.entity.InventiveArgument;
 import ceos.ipx.domain.analysis.inventivestep.entity.InventiveStepAnalysis;
 import ceos.ipx.domain.analysis.inventivestep.dto.response.InventiveStepResponse;
 import ceos.ipx.domain.cases.entity.Case;
@@ -153,6 +154,20 @@ public class InventiveStepService {
 
         // 10. 응답 조립
         return InventiveStepResponse.of(analysis, d1, d2, recommendedContents);
+    }
+
+    public InventiveStepResponse getAnalysis(Long userId, Long caseId) {
+        // 1. Case 조회 (권한 검증)
+        Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
+
+        // 2. 저장된 분석 조회
+        InventiveStepAnalysis analysis = txService.findAnalysis(caseEntity);
+
+        // 3. Arguments 조회 (4개 카테고리 모두)
+        List<InventiveArgument> argumentEntities = txService.findArguments(analysis);
+
+        // 4. 응답 조립
+        return InventiveStepResponse.ofEntities(analysis, argumentEntities);
     }
 
     private PriorArt findD1(List<PriorArt> priorArts, String primaryApplicationNumber) {

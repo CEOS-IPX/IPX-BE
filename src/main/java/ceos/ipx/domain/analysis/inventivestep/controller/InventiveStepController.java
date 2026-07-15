@@ -11,17 +11,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 진보성 분석 API
  *
  * 엔드포인트:
  *   - POST /api/cases/{caseId}/inventive-step : 진보성 분석 실행
+ *   - GET  /api/cases/{caseId}/inventive-step : 저장된 분석 결과 조회
  */
 @Tag(name = "진보성 분석", description = "진보성 분석 실행 API")
 @RestController
@@ -61,6 +58,29 @@ public class InventiveStepController {
         InventiveStepResponse response = inventiveStepService.analyze(
                 userId, caseId, request.primaryApplicationNumber()
         );
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @Operation(
+            summary = "진보성 분석 결과 조회",
+            description = """
+                    이전에 실행된 진보성 분석 결과를 조회합니다.
+ 
+                    응답 구조는 POST와 동일:
+                    - 4개 카테고리 모두 포함
+                    - recommended=true: 실제 논리
+                    - recommended=false: 안내 문구 템플릿
+ 
+                    분석이 실행된 적 없으면 404 반환
+                    """
+    )
+    @GetMapping
+    public ResponseEntity<ApiResponse<InventiveStepResponse>> getAnalysis(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
+            @Parameter(description = "사건 ID", example = "1")
+            @PathVariable Long caseId
+    ) {
+        InventiveStepResponse response = inventiveStepService.getAnalysis(userId, caseId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

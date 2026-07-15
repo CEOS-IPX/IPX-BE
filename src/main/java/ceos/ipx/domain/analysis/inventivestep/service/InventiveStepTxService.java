@@ -36,6 +36,22 @@ public class InventiveStepTxService {
     private final InventiveStepAnalysisRepository analysisRepository;
     private final InventiveArgumentRepository argumentRepository;
 
+    @Transactional(readOnly = true)
+    public InventiveStepAnalysis findAnalysis(Case caseEntity) {
+        return analysisRepository.findByCaseEntity(caseEntity)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVENTIVE_STEP_ANALYSIS_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public List<InventiveArgument> findArguments(InventiveStepAnalysis analysis) {
+        List<InventiveArgument> arguments = argumentRepository.findAllByAnalysis(analysis);
+
+        if (arguments.isEmpty())
+            throw new BusinessException(ErrorCode.INVENTIVE_ARGUMENT_NOT_FOUND);
+
+        return arguments;
+    }
+
     /**
      * Case에 기존 분석이 있으면 삭제
      * 삭제 순서: InventiveArgument → InventiveStepAnalysis (FK 관계)

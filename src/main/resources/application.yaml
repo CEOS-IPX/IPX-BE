@@ -11,6 +11,18 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 management:
   endpoints:
     web:
@@ -19,10 +31,45 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    mail:
+      enabled: false
 
-search-server:
-  base-url: ${SEARCH_SERVER_URL:http://localhost:8000}
-  timeout-seconds: 120
+python:
+  server:
+    base-url: ${SEARCH_SERVER_URL:http://localhost:8000}
+    timeout-seconds: 120
+
+opensearch:
+  host: ${OPENSEARCH_HOST:localhost}
+  port: ${OPENSEARCH_PORT:9200}
+  index: patents
 
 server:
   port: 8080
+
+google:
+  oauth:
+    client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
+    client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET:}
+    redirect-uri: ${GOOGLE_OAUTH_REDIRECT_URI:http://localhost:8080/api/auth/oauth/google/callback}
+    auth-uri: https://accounts.google.com/o/oauth2/v2/auth
+    token-uri: https://oauth2.googleapis.com/token
+    user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
+    scope:
+      - openid
+      - email
+      - profile
+
+frontend:
+  oauth:
+    google-callback-uri: ${FRONTEND_GOOGLE_OAUTH_CALLBACK_URI:http://localhost:3000/oauth/google/callback}
+    allowed-redirect-uris:
+      - http://localhost:3000/oauth/google/callback
+      - https://ipx-patent.com/oauth/google/callback
+      - https://www.ipx-patent.com/oauth/google/callback
+
+jwt:
+  secret: ${JWT_SECRET:ipx-local-jwt-secret-key-for-development-1234567890}
+  access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:3600}
+  refresh-token-expiration-seconds: ${JWT_REFRESH_TOKEN_EXPIRATION_SECONDS:1209600}

@@ -14,9 +14,12 @@ import java.util.Map;
 
 @Entity
 @Getter
-@Table(name = "inventive_arguments",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"analysis_id", "argument_type"}),
-        indexes = @Index(name = "idx_ia_analysis", columnList = "analysis_id"))
+@Table(
+        name = "inventive_arguments",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_ia_analysis_type", columnNames = {"analysis_id", "argument_type"})
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InventiveArgument extends BaseEntity {
 
@@ -32,13 +35,9 @@ public class InventiveArgument extends BaseEntity {
     @Column(name = "argument_type", nullable = false, length = 30)
     private ArgumentType argumentType;
 
-    /** 적용 여부 (변리사 또는 AI가 선택 시 true) */
-    @Column(nullable = false)
-    private Boolean applicable;
-
     /** AI 추천 여부 */
-    @Column(name = "ai_recommended", nullable = false)
-    private Boolean aiRecommended;
+    @Column(nullable = false)
+    private Boolean recommended;
 
     /**
      * 논리 유형별 구조화된 데이터
@@ -53,25 +52,10 @@ public class InventiveArgument extends BaseEntity {
 
     @Builder
     private InventiveArgument(InventiveStepAnalysis analysis, ArgumentType argumentType,
-                              Boolean applicable, Boolean aiRecommended,
-                              Map<String, Object> content) {
+                              Boolean recommended, Map<String, Object> content) {
         this.analysis = analysis;
         this.argumentType = argumentType;
-        this.applicable = applicable != null ? applicable : false;
-        this.aiRecommended = aiRecommended != null ? aiRecommended : false;
+        this.recommended = recommended != null ? recommended : false;
         this.content = content != null ? content : new HashMap<>();
-    }
-
-    public void markApplicable() {
-        this.applicable = true;
-    }
-
-    public void markNotApplicable() {
-        this.applicable = false;
-    }
-
-    public void updateContent(Map<String, Object> content) {
-        this.content = content != null ? content : new HashMap<>();
-        this.applicable = true;
     }
 }

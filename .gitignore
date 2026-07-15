@@ -39,3 +39,8 @@ out/
 ### environment files ###
 .env
 .env.prod
+load-env.ps1
+
+### docker test ###
+docker-compose.override.yml
+

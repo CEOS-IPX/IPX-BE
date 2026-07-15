@@ -125,14 +125,6 @@
       "legal_status": {
         "type": "keyword"
       },
-      "big_drawing": {
-        "type": "keyword",
-        "index": false
-      },
-      "drawing": {
-        "type": "keyword",
-        "index": false
-      },
       "collected_date": {
         "type": "date",
         "format": "yyyy-MM-dd"

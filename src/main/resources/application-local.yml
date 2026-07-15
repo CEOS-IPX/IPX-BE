@@ -2,12 +2,12 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/patent_db
     username: ${POSTGRES_USER:ipx_patent_user}
-    password: ${POSTGRES_PASSWORD}
+    password: ${POSTGRES_PASSWORD:local_dev_postgres_password}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
@@ -16,6 +16,7 @@ spring:
     redis:
       host: localhost
       port: 6379
+      password: ${REDIS_PASSWORD:local_dev_redis_password}
 
 logging:
   level:

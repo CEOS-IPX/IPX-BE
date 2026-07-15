@@ -1,6 +1,7 @@
 package ceos.ipx.domain.analysis.novelty.entity;
 
 import ceos.ipx.domain.cases.entity.Case;
+import ceos.ipx.domain.cases.entity.PriorArt;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -26,26 +27,31 @@ public class NoveltyAnalysis {
     @JoinColumn(name = "case_id", nullable = false, unique = true)
     private Case caseEntity;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "overall_verdict", length = 20)
-    private NoveltyVerdict overallVerdict;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "d1_prior_art_id", nullable = false)
+    private PriorArt d1PriorArt;
 
-    @Column(columnDefinition = "TEXT")
-    private String summary;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "overall_similarity", length = 20, nullable = false)
+    private NoveltyVerdict overallSimilarity;
+
+    @Column(name = "conclusion_text", columnDefinition = "TEXT", nullable = false)
+    private String conclusionText;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Builder
-    private NoveltyAnalysis(Case caseEntity, NoveltyVerdict overallVerdict, String summary) {
+    private NoveltyAnalysis(Case caseEntity, PriorArt  d1PriorArt, NoveltyVerdict overallSimilarity, String conclusionText) {
         this.caseEntity = caseEntity;
-        this.overallVerdict = overallVerdict;
-        this.summary = summary;
+        this.d1PriorArt =  d1PriorArt;
+        this.overallSimilarity = overallSimilarity;
+        this.conclusionText = conclusionText;
     }
 
-    public void updateResult(NoveltyVerdict verdict, String summary) {
-        this.overallVerdict = verdict;
-        this.summary = summary;
+    public void updateResult(NoveltyVerdict overallSimilarity, String conclusionText) {
+        this.overallSimilarity = overallSimilarity;
+        this.conclusionText = conclusionText;
     }
 }

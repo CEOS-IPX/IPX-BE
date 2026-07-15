@@ -1,5 +1,6 @@
 package ceos.ipx.domain.user.entity;
 
+import ceos.ipx.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -12,12 +13,14 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Table(name = "terms_agreements", indexes = {
-        @Index(name = "idx_ta_user", columnList = "user_id")
-})
-@EntityListeners(AuditingEntityListener.class)
+@Table(
+        name = "terms_agreements",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_ta_user_type_version", columnNames = {"user_id", "type", "terms_version"})
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TermsAgreement {
+public class TermsAgreement extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,20 +31,20 @@ public class TermsAgreement {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "terms_type", nullable = false, length = 50)
-    private TermsType termsType;
+    @Column(nullable = false, length = 50)
+    private TermsType type;
+
+    @Column(nullable = false)
+    private Boolean agreed;
 
     @Column(name = "terms_version", nullable = false, length = 20)
     private String termsVersion;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
     @Builder
-    private TermsAgreement(User user, TermsType termsType, String termsVersion) {
+    private TermsAgreement(User user, TermsType type, Boolean agreed, String termsVersion) {
         this.user = user;
-        this.termsType = termsType;
+        this.type = type;
+        this.agreed = agreed;
         this.termsVersion = termsVersion;
     }
 }

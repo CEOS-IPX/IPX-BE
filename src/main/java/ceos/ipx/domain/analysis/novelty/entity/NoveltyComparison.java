@@ -10,11 +10,12 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "novelty_comparisons",
-        uniqueConstraints = @UniqueConstraint(columnNames = {
-                "novelty_analysis_id", "component_id", "prior_art_id"
-        }),
-        indexes = @Index(name = "idx_nc_analysis", columnList = "novelty_analysis_id"))
+@Table(
+        name = "novelty_comparisons",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_nc_analysis_component", columnNames = {"analysis_id", "component_id"})
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class NoveltyComparison {
 
@@ -23,34 +24,33 @@ public class NoveltyComparison {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "novelty_analysis_id", nullable = false)
-    private NoveltyAnalysis noveltyAnalysis;
+    @JoinColumn(name = "analysis_id", nullable = false)
+    private NoveltyAnalysis analysis;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "component_id", nullable = false)
     private InventionComponent component;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prior_art_id", nullable = false)
-    private PriorArt priorArt;
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "match_status", nullable = false, length = 20)
-    private MatchStatus matchStatus;
+    @Column(name = "comparison_result", nullable = false, length = 20)
+    private ComparisonResult comparisonResult;
 
-    @Column(name = "prior_art_excerpt", columnDefinition = "TEXT")
-    private String priorArtExcerpt;
+    @Column(name = "disclosure_text", columnDefinition = "TEXT", nullable = false)
+    private String disclosureText;
+
+    @Column(name = "citation", columnDefinition = "TEXT")
+    private String citation;
 
     @Builder
     private NoveltyComparison(NoveltyAnalysis noveltyAnalysis,
                               InventionComponent component,
-                              PriorArt priorArt,
-                              MatchStatus matchStatus,
-                              String priorArtExcerpt) {
-        this.noveltyAnalysis = noveltyAnalysis;
+                              ComparisonResult comparisonResult,
+                              String disclosureText,
+                              String citation) {
+        this.analysis = noveltyAnalysis;
         this.component = component;
-        this.priorArt = priorArt;
-        this.matchStatus = matchStatus;
-        this.priorArtExcerpt = priorArtExcerpt;
+        this.comparisonResult = comparisonResult;
+        this.disclosureText = disclosureText;
+        this.citation = citation;
     }
 }

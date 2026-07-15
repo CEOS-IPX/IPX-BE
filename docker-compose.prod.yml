@@ -2,10 +2,6 @@
 # 운영 서버용 docker-compose.prod.yml
 # ============================================================
 # 구성: app-spring + app-python + postgres + redis + opensearch + nginx + certbot
-# ============================================================
-
-# ============================================================
-# 운영 서버용 docker-compose.prod.yml
 # 적재 규모: 20만 건 이내 (m7i-flex.large 8GB)
 # ============================================================
 
@@ -39,6 +35,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       SEARCH_SERVER_URL: http://app-python:8000
+      OPENSEARCH_HOST: opensearch
+      OPENSEARCH_PROT: 9200
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
@@ -73,6 +71,7 @@ services:
       retries: 5
       start_period: 90s   # BGE-M3 모델 로드 시간 고려
     volumes:
+      - python_data:/data
       - huggingface_cache:/app/.cache/huggingface
     networks:
       - patent-net
@@ -180,6 +179,7 @@ services:
     logging: *default-logging
 
 volumes:
+  python_data:
   huggingface_cache:
   postgres_data:
   redis_data:

@@ -11,6 +11,9 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import ceos.ipx.domain.terms.dto.TermsAgreementRequest;
+import ceos.ipx.domain.terms.entity.TermsAgreementType;
+
 
 class SignUpRequestTest {
 
@@ -37,7 +40,7 @@ class SignUpRequestTest {
                 "Password123!",
                 "Password123!",
                 "IPX",
-                List.of(new TermsAgreementRequest("SERVICE", true))
+                List.of(new TermsAgreementRequest(TermsAgreementType.SERVICE_TERMS, true))
         );
 
         assertThat(validator.validate(request)).isEmpty();
@@ -52,7 +55,7 @@ class SignUpRequestTest {
                 "Password123",
                 "Password!!!",
                 "IPX",
-                List.of(new TermsAgreementRequest("SERVICE", true))
+                List.of(new TermsAgreementRequest(TermsAgreementType.SERVICE_TERMS, Boolean.TRUE))
         );
 
         Set<String> invalidFields = validator.validate(request).stream()

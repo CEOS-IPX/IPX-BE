@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import ceos.ipx.domain.terms.dto.TermsAgreementRequest;
 
 @Schema(description = "Sign-up request")
 public record SignUpRequest(

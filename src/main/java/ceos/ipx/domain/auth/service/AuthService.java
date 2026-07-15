@@ -26,6 +26,7 @@ import ceos.ipx.domain.auth.dto.GoogleUserInfoResponse;
 import ceos.ipx.domain.auth.dto.OAuthSignupRequiredResponse;
 import ceos.ipx.domain.auth.dto.OAuthTokenResponse;
 import ceos.ipx.domain.auth.dto.GoogleOAuthSignupRequest;
+import ceos.ipx.domain.terms.service.TermsAgreementService;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +47,7 @@ public class AuthService {
     private final EmailVerificationService emailVerificationService;
     private final GoogleOAuthClient googleOAuthClient;
     private final OAuthSignupTokenService oauthSignupTokenService;
+    private final TermsAgreementService termsAgreementService;
 
     @Transactional
     public SignUpResponse signUp(SignUpRequest request) {
@@ -58,7 +60,7 @@ public class AuthService {
         }
 
         // TODO: 이메일 인증 토큰 검증 로직 추가
-        // TODO: 필수 약관 동의 검증 및 저장 로직 추가
+        termsAgreementService.validateRequiredTermsAgreements(request.termsAgreements());
 
         String encodedPassword = passwordEncoder.encode(request.password());
 
@@ -72,6 +74,7 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+        termsAgreementService.saveTermsAgreements(savedUser, request.termsAgreements());
 
         return new SignUpResponse(
                 savedUser.getId(),
@@ -138,6 +141,7 @@ public class AuthService {
     ) {
         GoogleUserInfoResponse googleUserInfo =
                 oauthSignupTokenService.getGoogleUserInfo(request.oauthSignupToken());
+        termsAgreementService.validateRequiredTermsAgreements(request.termsAgreements());
 
         if (userRepository.existsByEmail(googleUserInfo.email())) {
             throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
@@ -154,6 +158,7 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+        termsAgreementService.saveTermsAgreements(savedUser, request.termsAgreements());
 
         oauthSignupTokenService.deleteGoogleUserInfo(request.oauthSignupToken());
 

@@ -7,7 +7,6 @@ import static org.mockito.Mockito.when;
 
 import ceos.ipx.domain.user.dto.SignUpRequest;
 import ceos.ipx.domain.user.dto.SignUpResponse;
-import ceos.ipx.domain.user.dto.TermsAgreementRequest;
 import ceos.ipx.domain.user.entity.User;
 import ceos.ipx.domain.user.entity.UserProvider;
 import ceos.ipx.domain.user.repository.UserRepository;
@@ -21,6 +20,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
+import ceos.ipx.domain.terms.dto.TermsAgreementRequest;
+import ceos.ipx.domain.terms.entity.TermsAgreementType;
+import ceos.ipx.domain.terms.service.TermsAgreementService;import ceos.ipx.domain.terms.service.TermsAgreementService;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -31,6 +33,9 @@ class AuthServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private TermsAgreementService termsAgreementService;
+    
     @InjectMocks
     private AuthService authService;
 
@@ -46,7 +51,7 @@ class AuthServiceTest {
                 "Password123!",
                 "Password123!",
                 "IPX",
-                List.of(new TermsAgreementRequest("SERVICE", true))
+                List.of(new TermsAgreementRequest(TermsAgreementType.SERVICE_TERMS, true))
         );
 
         when(userRepository.existsByEmail(request.email())).thenReturn(false);

@@ -64,6 +64,11 @@ public interface CaseRepository extends JpaRepository<Case, Long> {
             Pageable pageable
     );
 
+    List<Case> findByUserIdOrderByUpdatedAtDescIdDesc(
+            Long userId,
+            Pageable pageable
+    );
+
     long countByUserId(Long userId);
 
     long countByUserIdAndReportCompletedAtIsNull(Long userId);

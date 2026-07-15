@@ -46,6 +46,7 @@ public enum ErrorCode {
 
     // ===== 사건 관련 =====
     CASE_NOT_FOUND(HttpStatus.NOT_FOUND, "CA001", "사건을 찾을 수 없습니다."),
+    CASE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "CA002", "해당 사건에 접근할 권한이 없습니다."),
 
     // ===== 검색 관련 =====
     SEARCH_NOT_STARTED(HttpStatus.BAD_REQUEST, "S001", "검색이 시작되지 않았습니다."),

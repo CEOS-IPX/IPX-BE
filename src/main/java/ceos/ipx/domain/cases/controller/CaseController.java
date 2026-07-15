@@ -4,6 +4,7 @@ import ceos.ipx.domain.cases.dto.request.CaseSortType;
 import ceos.ipx.domain.cases.dto.request.CaseStatusGroup;
 import ceos.ipx.domain.cases.dto.response.CaseDetailResponse;
 import ceos.ipx.domain.cases.dto.response.CaseListResponse;
+import ceos.ipx.domain.cases.dto.response.RecentCaseListResponse;
 import ceos.ipx.domain.cases.service.CaseService;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,6 +48,18 @@ public class CaseController {
                         size
                 )
         );
+    }
+
+    @Operation(
+            summary = "최근 사건 목록 조회",
+            description = "로그인한 사용자의 최근 사건 목록을 수정 시각 기준으로 조회합니다."
+    )
+    @GetMapping("/recent")
+    public ApiResponse<RecentCaseListResponse> getRecentCases(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(defaultValue = "5") int limit
+    ) {
+        return ApiResponse.ok(caseService.getRecentCases(userId, limit));
     }
 
     @Operation(

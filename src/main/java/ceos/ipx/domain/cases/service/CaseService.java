@@ -5,6 +5,8 @@ import ceos.ipx.domain.cases.dto.request.CaseStatusGroup;
 import ceos.ipx.domain.cases.dto.response.CaseDetailResponse;
 import ceos.ipx.domain.cases.dto.response.CaseListItemResponse;
 import ceos.ipx.domain.cases.dto.response.CaseListResponse;
+import ceos.ipx.domain.cases.dto.response.RecentCaseItemResponse;
+import ceos.ipx.domain.cases.dto.response.RecentCaseListResponse;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.CaseStatus;
 import ceos.ipx.domain.cases.repository.CaseRepository;
@@ -29,6 +31,7 @@ import java.util.List;
 public class CaseService {
 
     private static final int MAX_PAGE_SIZE = 100;
+    private static final int MAX_RECENT_CASE_LIMIT = 20;
 
     private final CaseRepository caseRepository;
     private final InventionComponentRepository inventionComponentRepository;
@@ -115,6 +118,40 @@ public class CaseService {
                 .build();
     }
 
+    public RecentCaseListResponse getRecentCases(Long userId, int limit) {
+        validateRecentCaseLimit(limit);
+
+        Pageable pageable = PageRequest.of(
+                0,
+                limit,
+                Sort.by(
+                        Sort.Order.desc("updatedAt"),
+                        Sort.Order.desc("id")
+                )
+        );
+
+        List<RecentCaseItemResponse> cases =
+                caseRepository.findByUserIdOrderByUpdatedAtDescIdDesc(userId, pageable)
+                        .stream()
+                        .map(caseEntity -> {
+                            CaseStatus status = caseStatusResolver.resolve(caseEntity);
+
+                            return RecentCaseItemResponse.builder()
+                                    .caseId(caseEntity.getId())
+                                    .title(caseEntity.getTitle())
+                                    .technicalField(caseEntity.getTechnicalField())
+                                    .status(status.name())
+                                    .statusLabel(status.getLabel())
+                                    .updatedAt(caseEntity.getUpdatedAt())
+                                    .build();
+                        })
+                        .toList();
+
+        return RecentCaseListResponse.builder()
+                .cases(cases)
+                .build();
+    }
+
     private CaseListItemResponse toCaseListItemResponse(
             CaseListProjection projection
     ) {
@@ -138,6 +175,12 @@ public class CaseService {
 
     private void validatePaging(int page, int size) {
         if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+    }
+
+    private void validateRecentCaseLimit(int limit) {
+        if (limit < 1 || limit > MAX_RECENT_CASE_LIMIT) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
     }

@@ -20,6 +20,7 @@ import ceos.ipx.domain.cases.dto.response.PriorArtDetailResponse;
 import ceos.ipx.global.opensearch.OpenSearchClient;
 import ceos.ipx.global.opensearch.dto.PatentDocument;
 import ceos.ipx.domain.cases.dto.response.UpdatePriorArtInclusionResponse;
+import ceos.ipx.domain.cases.dto.response.DeletePriorArtResponse;
 
 /**
  * 선행기술 조회/관리 서비스
@@ -88,6 +89,21 @@ public class PriorArtService {
         );
 
         return UpdatePriorArtInclusionResponse.from(priorArt);
+    }
+
+    /**
+     * 선행문헌 삭제
+     */
+    public DeletePriorArtResponse deletePriorArt(
+            Long userId,
+            Long priorArtId
+    ) {
+        Long caseId = txService.deletePriorArt(userId, priorArtId);
+
+        return DeletePriorArtResponse.of(
+                priorArtId,
+                caseId
+        );
     }
 
     /**

@@ -156,6 +156,18 @@ public class Case extends BaseEntity {
         this.reportCompletedAt = null;
     }
 
+    public void resetNoveltyAnalysis() {
+        this.noveltyCompletedAt = null;
+    }
+
+    public void resetInventiveStepAnalysis() {
+        this.inventiveCompletedAt = null;
+    }
+
+    public void resetReport() {
+        this.reportCompletedAt = null;
+    }
+
     /**
      * 재검색 시 additionalInfo 갱신 (사용자가 새로 입력한 정보로 덮어씀)
      * 파라미터가 null이면 해당 필드도 null로 초기화

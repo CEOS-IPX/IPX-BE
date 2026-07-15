@@ -2,17 +2,22 @@ package ceos.ipx.domain.cases.controller;
 
 import ceos.ipx.domain.cases.dto.request.CaseSortType;
 import ceos.ipx.domain.cases.dto.request.CaseStatusGroup;
+import ceos.ipx.domain.cases.dto.request.CaseUpdateRequest;
 import ceos.ipx.domain.cases.dto.response.CaseDetailResponse;
 import ceos.ipx.domain.cases.dto.response.CaseListResponse;
+import ceos.ipx.domain.cases.dto.response.CaseUpdateResponse;
 import ceos.ipx.domain.cases.dto.response.RecentCaseListResponse;
 import ceos.ipx.domain.cases.service.CaseService;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -59,7 +64,24 @@ public class CaseController {
             @AuthenticationPrincipal Long userId,
             @RequestParam(defaultValue = "5") int limit
     ) {
-        return ApiResponse.ok(caseService.getRecentCases(userId, limit));
+        return ApiResponse.ok(
+                caseService.getRecentCases(userId, limit)
+        );
+    }
+
+    @Operation(
+            summary = "사건 수정",
+            description = "로그인한 사용자가 자신이 생성한 사건의 사건명, 사명, 의뢰인을 수정합니다."
+    )
+    @PatchMapping("/{caseId}")
+    public ApiResponse<CaseUpdateResponse> updateCase(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long caseId,
+            @Valid @RequestBody CaseUpdateRequest request
+    ) {
+        return ApiResponse.ok(
+                caseService.updateCase(userId, caseId, request)
+        );
     }
 
     @Operation(
@@ -71,6 +93,8 @@ public class CaseController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long caseId
     ) {
-        return ApiResponse.ok(caseService.getCaseDetail(userId, caseId));
+        return ApiResponse.ok(
+                caseService.getCaseDetail(userId, caseId)
+        );
     }
 }

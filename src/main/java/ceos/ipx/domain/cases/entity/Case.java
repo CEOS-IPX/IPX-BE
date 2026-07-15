@@ -98,6 +98,35 @@ public class Case extends BaseEntity {
         this.measurementResults = measurementResults;
     }
 
+    public void updateBasicInfo(
+            boolean titlePresent,
+            String title,
+            boolean applicantNamePresent,
+            String applicantName,
+            boolean inventorNamePresent,
+            String inventorName
+    ) {
+        if (titlePresent) {
+            this.title = title.trim();
+        }
+
+        if (applicantNamePresent) {
+            this.applicantName = normalizeNullableText(applicantName);
+        }
+
+        if (inventorNamePresent) {
+            this.inventorName = normalizeNullableText(inventorName);
+        }
+    }
+
+    private String normalizeNullableText(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        return value.trim();
+    }
+
     public void updateKeywords(List<String> keywords) {
         this.keywords = keywords != null ? keywords : new ArrayList<>();
     }

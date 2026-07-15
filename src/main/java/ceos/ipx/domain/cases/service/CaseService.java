@@ -22,6 +22,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ceos.ipx.domain.cases.dto.request.CaseUpdateRequest;
+import ceos.ipx.domain.cases.dto.response.CaseUpdateResponse;
 
 import java.util.List;
 
@@ -37,6 +39,39 @@ public class CaseService {
     private final InventionComponentRepository inventionComponentRepository;
     private final PriorArtRepository priorArtRepository;
     private final CaseStatusResolver caseStatusResolver;
+
+    @Transactional
+    public CaseUpdateResponse updateCase(
+            Long userId,
+            Long caseId,
+            CaseUpdateRequest request
+    ) {
+        Case caseEntity = caseRepository.findById(caseId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
+
+        if (!caseEntity.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.CASE_ACCESS_DENIED);
+        }
+
+        caseEntity.updateBasicInfo(
+                request.isTitlePresent(),
+                request.getTitle(),
+                request.isApplicantNamePresent(),
+                request.getApplicantName(),
+                request.isInventorNamePresent(),
+                request.getInventorName()
+        );
+
+        caseRepository.flush();
+
+        return CaseUpdateResponse.builder()
+                .caseId(caseEntity.getId())
+                .title(caseEntity.getTitle())
+                .applicantName(caseEntity.getApplicantName())
+                .inventorName(caseEntity.getInventorName())
+                .updatedAt(caseEntity.getUpdatedAt())
+                .build();
+    }
 
     public CaseDetailResponse getCaseDetail(Long userId, Long caseId) {
         Case caseEntity = caseRepository.findById(caseId)

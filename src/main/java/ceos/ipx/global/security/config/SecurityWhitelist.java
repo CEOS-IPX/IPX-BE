@@ -50,8 +50,11 @@ public final class SecurityWhitelist {
             // 프로젝트 관리
             "/api/projects/**",                  // 프로젝트 CRUD, 후보 저장/삭제
 
-            // 검색 (로그인한 사용자만 사용 가능하도록)
-            "/api/search/**",                    // 특허 검색
+            // 특허 검색 관련
+            "/api/searches/**",                    // 특허 검색
+
+            // 사건 및 분석 관련
+            "/api/cases/**",
 
             // 인증 관련
             "/api/auth/logout",                  // 로그아웃

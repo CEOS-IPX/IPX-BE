@@ -37,6 +37,8 @@ public enum ErrorCode {
     SOCIAL_LOGIN_NOT_ALLOWED(HttpStatus.CONFLICT, "AU022", "일반 로그인으로 가입된 이메일입니다."),
     OAUTH_SIGNUP_TOKEN_EXPIRED(HttpStatus.GONE, "AU023", "OAuth 회원가입 토큰이 만료되었거나 존재하지 않습니다."),
     REQUIRED_TERMS_NOT_AGREED(HttpStatus.BAD_REQUEST, "AU024", "필수 약관에 동의해야 합니다."),
+    EMAIL_VERIFICATION_TOKEN_EXPIRED(HttpStatus.GONE, "AU025", "이메일 인증 토큰이 만료되었거나 존재하지 않습니다."),
+    EMAIL_VERIFICATION_EMAIL_MISMATCH(HttpStatus.BAD_REQUEST, "AU026", "이메일 인증 정보가 일치하지 않습니다."),
 
     UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED, "SC001", "인증이 필요합니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "SC002", "해당 요청에 권한이 없습니다."),
@@ -71,7 +73,6 @@ public enum ErrorCode {
     INVENTIVE_ARGUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "I004", "진보성 분석 항목이 존재하지 않습니다."),
     INVENTIVE_STEP_NO_CANDIDATES(HttpStatus.BAD_REQUEST, "I001", "부인용 D2로 사용할 후보가 없습니다."),
     INVENTIVE_STEP_INSUFFICIENT_PRIOR_ARTS(HttpStatus.BAD_REQUEST, "I002", "진보성 분석에는 최소 2개의 선행기술이 필요합니다.");
-
 
     private final HttpStatus status;
     private final String code;

@@ -5,6 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ceos.ipx.domain.terms.dto.TermsAgreementRequest;
+import ceos.ipx.domain.terms.entity.TermsAgreementType;
+import ceos.ipx.domain.terms.service.TermsAgreementService;
 import ceos.ipx.domain.user.dto.SignUpRequest;
 import ceos.ipx.domain.user.dto.SignUpResponse;
 import ceos.ipx.domain.user.entity.User;
@@ -20,9 +23,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
-import ceos.ipx.domain.terms.dto.TermsAgreementRequest;
-import ceos.ipx.domain.terms.entity.TermsAgreementType;
-import ceos.ipx.domain.terms.service.TermsAgreementService;import ceos.ipx.domain.terms.service.TermsAgreementService;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -35,7 +35,10 @@ class AuthServiceTest {
 
     @Mock
     private TermsAgreementService termsAgreementService;
-    
+
+    @Mock
+    private EmailVerificationService emailVerificationService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -51,20 +54,40 @@ class AuthServiceTest {
                 "Password123!",
                 "Password123!",
                 "IPX",
-                List.of(new TermsAgreementRequest(TermsAgreementType.SERVICE_TERMS, true))
+                List.of(
+                        new TermsAgreementRequest(
+                                TermsAgreementType.SERVICE_TERMS,
+                                true
+                        )
+                )
         );
 
-        when(userRepository.existsByEmail(request.email())).thenReturn(false);
-        when(passwordEncoder.encode(request.password())).thenReturn("encoded-password");
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-            User savedUser = invocation.getArgument(0);
-            ReflectionTestUtils.setField(savedUser, "id", 1L);
-            return savedUser;
-        });
+        when(userRepository.existsByEmail(request.email()))
+                .thenReturn(false);
+
+        when(emailVerificationService.getEmailBySignupVerificationToken(
+                request.verificationToken()
+        )).thenReturn(request.email());
+
+        when(passwordEncoder.encode(request.password()))
+                .thenReturn("encoded-password");
+
+        when(userRepository.save(any(User.class)))
+                .thenAnswer(invocation -> {
+                    User savedUser = invocation.getArgument(0);
+                    ReflectionTestUtils.setField(savedUser, "id", 1L);
+                    return savedUser;
+                });
 
         SignUpResponse response = authService.signUp(request);
 
         verify(userRepository).save(userCaptor.capture());
+
+        verify(emailVerificationService).deleteSignupVerification(
+                request.verificationToken(),
+                request.email()
+        );
+
         User savedUser = userCaptor.getValue();
 
         assertThat(savedUser.getProvider()).isEqualTo(UserProvider.LOCAL);

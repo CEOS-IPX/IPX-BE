@@ -1,6 +1,7 @@
 package ceos.ipx.domain.cases.controller;
 
 import ceos.ipx.domain.cases.dto.request.AddManualRequest;
+import ceos.ipx.domain.cases.dto.response.PriorArtListResponse;
 import ceos.ipx.domain.cases.dto.response.PriorArtResponse;
 import ceos.ipx.domain.cases.service.priorart.PriorArtService;
 import ceos.ipx.global.response.ApiResponse;
@@ -36,17 +37,17 @@ public class PriorArtController {
                     특정 사건의 선행기술 결과를 조회합니다.
 
                     - 정렬: rrf_score DESC → created_at ASC
-                    - relevance는 순위 기반 계산 (상위 20% 이내: 매우 높음, 50%: 높음, 80%: 보통, 그 외: 낮음)
+                    - relevance는 순위 기반 계산 (상위 20% 이내: VERY_HIGH, 50%: HIGH, 80%: MEDIUM, 그 외: LOW)
                     """
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PriorArtResponse>>> getPriorArts(
+    public ResponseEntity<ApiResponse<PriorArtListResponse>> getPriorArts(
             @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
             @Parameter(description = "사건 ID", example = "1")
             @PathVariable Long caseId
     ) {
         List<PriorArtResponse> results = priorArtService.getPriorArts(userId, caseId);
-        return ResponseEntity.ok(ApiResponse.ok(results));
+        return ResponseEntity.ok(ApiResponse.ok(PriorArtListResponse.of(results)));
     }
 
     @Operation(
@@ -60,13 +61,13 @@ public class PriorArtController {
                     """
     )
     @PostMapping("/manual")
-    public ResponseEntity<ApiResponse<List<PriorArtResponse>>> addManual(
+    public ResponseEntity<ApiResponse<PriorArtListResponse>> addManual(
             @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
             @Parameter(description = "사건 ID", example = "1")
             @PathVariable Long caseId,
             @RequestBody @Valid AddManualRequest request
     ) {
         List<PriorArtResponse> results = priorArtService.addManual(userId, caseId, request);
-        return ResponseEntity.ok(ApiResponse.ok(results));
+        return ResponseEntity.ok(ApiResponse.ok(PriorArtListResponse.of(results)));
     }
 }

@@ -1,11 +1,11 @@
 package ceos.ipx.domain.cases.service.cases;
 
 import ceos.ipx.domain.cases.dto.request.SearchRequest;
+import ceos.ipx.domain.cases.dto.response.SearchCancelResponse;
 import ceos.ipx.domain.cases.dto.response.SearchStartResponse;
+import ceos.ipx.domain.cases.dto.response.SearchStatusResponse;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.global.python.PythonSearchClient;
-import ceos.ipx.global.python.dto.response.search.PythonCancelResponse;
-import ceos.ipx.global.python.dto.response.search.PythonSearchStatusResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -57,17 +57,17 @@ public class CaseSearchService {
 
     /**
      * 검색 진행 상태 조회
-     * Python /search/{searchId}/status 그대로 프록시
+     * Python /search/{searchId}/status 응답을 camelCase DTO로 변환
      */
-    public PythonSearchStatusResponse getStatus(String searchId) {
-        return pythonSearchClient.getStatus(searchId);
+    public SearchStatusResponse getStatus(String searchId) {
+        return SearchStatusResponse.from(pythonSearchClient.getStatus(searchId));
     }
 
     /**
      * 검색 중단 요청
-     * Python /search/{searchId}/cancel 그대로 프록시
+     * Python /search/{searchId}/cancel 응답을 camelCase DTO로 변환
      */
-    public PythonCancelResponse cancelSearch(String searchId) {
-        return pythonSearchClient.cancel(searchId);
+    public SearchCancelResponse cancelSearch(String searchId) {
+        return SearchCancelResponse.from(pythonSearchClient.cancel(searchId));
     }
 }

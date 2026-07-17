@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Tag(name = "신규성 분석", description = "신규성 분석 실행 및 조회 API")
 @RestController
-@RequestMapping("/api/cases/{caseId}/novelty")
+@RequestMapping("/api/cases/{caseId}/novelty-analysis")
 @RequiredArgsConstructor
 public class NoveltyController {
 

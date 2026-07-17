@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Tag(name = "진보성 분석", description = "진보성 분석 실행 API")
 @RestController
-@RequestMapping("/api/cases/{caseId}/inventive-step")
+@RequestMapping("/api/cases/{caseId}/inventive-step-analysis")
 @RequiredArgsConstructor
 public class InventiveStepController {
 

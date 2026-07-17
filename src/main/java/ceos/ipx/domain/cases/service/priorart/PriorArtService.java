@@ -2,6 +2,7 @@ package ceos.ipx.domain.cases.service.priorart;
 
 import ceos.ipx.domain.cases.dto.request.AddManualRequest;
 import ceos.ipx.domain.cases.dto.response.PriorArtResponse;
+import ceos.ipx.domain.cases.dto.response.Relevance;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.domain.cases.service.common.CaseQueryTxService;
@@ -19,7 +20,6 @@ import java.util.Set;
 import ceos.ipx.domain.cases.dto.response.PriorArtDetailResponse;
 import ceos.ipx.global.opensearch.OpenSearchClient;
 import ceos.ipx.global.opensearch.dto.PatentDocument;
-import ceos.ipx.domain.cases.dto.response.UpdatePriorArtInclusionResponse;
 import ceos.ipx.domain.cases.dto.response.DeletePriorArtResponse;
 
 /**
@@ -72,23 +72,6 @@ public class PriorArtService {
         }
 
         return PriorArtDetailResponse.of(priorArt, patentDocument);
-    }
-
-    /**
-     * 선행문헌 분석 포함 여부 수정
-     */
-    public UpdatePriorArtInclusionResponse updatePriorArtInclusion(
-            Long userId,
-            Long priorArtId,
-            boolean included
-    ) {
-        PriorArt priorArt = txService.updateIncluded(
-                userId,
-                priorArtId,
-                included
-        );
-
-        return UpdatePriorArtInclusionResponse.from(priorArt);
     }
 
     /**
@@ -165,7 +148,7 @@ public class PriorArtService {
         return priorArts.stream()
                 .map(pa -> {
                     int rank = priorArts.indexOf(pa) + 1;
-                    String relevance = relevanceCalculator.toRelevance(rank, total);
+                    Relevance relevance = relevanceCalculator.toRelevance(rank, total);
                     return PriorArtResponse.of(pa, relevance);
                 })
                 .toList();

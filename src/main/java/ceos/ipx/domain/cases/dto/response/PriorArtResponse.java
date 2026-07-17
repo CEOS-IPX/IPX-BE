@@ -61,17 +61,14 @@ public record PriorArtResponse(
 
         @Schema(
                 description = "관련도 등급",
-                example = "매우 높음",
-                allowableValues = {"매우 높음", "높음", "보통", "낮음"}
+                example = "VERY_HIGH",
+                allowableValues = {"VERY_HIGH", "HIGH", "MEDIUM", "LOW"}
         )
-        String relevance,
-
-        @Schema(description = "신규성·진보성 분석 포함 여부", example = "true")
-        boolean included
+        Relevance relevance
 
 ) {
 
-    public static PriorArtResponse of(PriorArt priorArt, String relevance) {
+    public static PriorArtResponse of(PriorArt priorArt, Relevance relevance) {
         return new PriorArtResponse(
                 priorArt.getId(),
                 priorArt.getApplicationNumber(),
@@ -87,8 +84,7 @@ public record PriorArtResponse(
                 priorArt.getMatchedKeywords(),
                 priorArt.getReason(),
                 priorArt.getRrfScore(),
-                relevance,
-                priorArt.isIncluded()
+                relevance
         );
     }
 }

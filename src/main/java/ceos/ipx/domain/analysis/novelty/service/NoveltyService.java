@@ -59,7 +59,6 @@ public class NoveltyService {
 
         // 2. 상위 3건 선정
         List<PriorArt> topPriorArts = priorArts.stream()
-                .filter(PriorArt::isIncluded)
                 .limit(NOVELTY_PRIOR_ART_COUNT)
                 .toList();
 

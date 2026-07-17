@@ -7,10 +7,8 @@ import ceos.ipx.domain.cases.dto.response.CaseDeleteResponse;
 import ceos.ipx.domain.cases.dto.response.CaseDetailResponse;
 import ceos.ipx.domain.cases.dto.response.CaseListResponse;
 import ceos.ipx.domain.cases.dto.response.CaseUpdateResponse;
-import ceos.ipx.domain.cases.dto.response.ComponentListResponse;
 import ceos.ipx.domain.cases.dto.response.RecentCaseListResponse;
 import ceos.ipx.domain.cases.service.CaseService;
-import ceos.ipx.domain.cases.service.component.ComponentService;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,8 +23,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ceos.ipx.domain.cases.dto.request.ComponentSaveRequest;
-import org.springframework.web.bind.annotation.PutMapping;
 
 @Tag(name = "Case", description = "사건 관리 API")
 @RestController
@@ -35,7 +31,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 public class CaseController {
 
     private final CaseService caseService;
-    private final ComponentService componentService;
 
     @Operation(
             summary = "사건 목록 조회",
@@ -116,56 +111,6 @@ public class CaseController {
     ) {
         return ApiResponse.ok(
                 caseService.getCaseDetail(userId, caseId)
-        );
-    }
-
-    @Operation(
-            summary = "구성요소 목록 조회",
-            description = """
-                    특정 사건에 저장된 발명 구성요소 목록을 조회합니다.
-
-                    - 구성요소는 displayOrder 오름차순으로 반환됩니다.
-                    - label은 displayOrder를 기반으로 계산됩니다.
-                    - 등록된 구성요소가 없는 경우 빈 목록을 반환합니다.
-                    - 다른 사용자의 사건에 접근하면 CA002를 반환합니다.
-                    """
-    )
-    @GetMapping("/{caseId}/components")
-    public ApiResponse<ComponentListResponse> getComponents(
-            @AuthenticationPrincipal Long userId,
-            @PathVariable Long caseId
-    ) {
-        return ApiResponse.ok(
-                componentService.getComponents(userId, caseId)
-        );
-    }
-
-    @Operation(
-            summary = "구성요소 목록 저장 및 수정",
-            description = """
-                    특정 사건의 발명 구성요소 전체 목록을 저장합니다.
-
-                    - 요청 배열의 순서대로 displayOrder를 1부터 부여합니다.
-                    - label은 DB에 저장하지 않고 displayOrder를 기반으로 응답에서 계산합니다.
-                    - 동일한 순서의 기존 구성요소는 수정합니다.
-                    - 새롭게 추가된 순서는 신규 구성요소로 저장합니다.
-                    - 요청에서 제외된 기존 구성요소는 삭제합니다.
-                    - 빈 components 배열을 전달하면 기존 구성요소를 모두 삭제합니다.
-                    - 다른 사용자의 사건에 접근하면 CA002를 반환합니다.
-                    """
-    )
-    @PutMapping("/{caseId}/components")
-    public ApiResponse<ComponentListResponse> saveComponents(
-            @AuthenticationPrincipal Long userId,
-            @PathVariable Long caseId,
-            @Valid @RequestBody ComponentSaveRequest request
-    ) {
-        return ApiResponse.ok(
-                componentService.saveComponents(
-                        userId,
-                        caseId,
-                        request
-                )
         );
     }
 }

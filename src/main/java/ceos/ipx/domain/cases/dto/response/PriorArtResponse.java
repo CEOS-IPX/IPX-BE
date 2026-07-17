@@ -61,7 +61,7 @@ public record PriorArtResponse(
 
         @Schema(
                 description = "관련도 등급",
-                example = "VERY_HIGH",
+                example = "HIGH",
                 allowableValues = {"VERY_HIGH", "HIGH", "MEDIUM", "LOW"}
         )
         Relevance relevance

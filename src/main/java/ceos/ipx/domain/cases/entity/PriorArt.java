@@ -94,9 +94,6 @@ public class PriorArt {
     )
     private List<String> matchedKeywords = new ArrayList<>();
 
-    @Column(nullable = false)
-    private boolean included = true;
-
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -135,9 +132,5 @@ public class PriorArt {
         this.matchedKeywords =
                 matchedKeywords != null ? matchedKeywords : new ArrayList<>();
         this.reason = reason;
-    }
-
-    public void updateIncluded(boolean included) {
-        this.included = included;
     }
 }

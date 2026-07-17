@@ -64,15 +64,11 @@ public class InventiveStepService {
         List<InventionComponent> components = caseQueryTxService.findComponents(caseEntity);
         List<PriorArt> priorArts = caseQueryTxService.findPriorArts(caseEntity);
 
-        List<PriorArt> includedPriorArts = priorArts.stream()
-                .filter(PriorArt::isIncluded)
-                .toList();
-
         // 2. D1 확정
-        PriorArt d1 = findD1(includedPriorArts, primaryApplicationNumber);
+        PriorArt d1 = findD1(priorArts, primaryApplicationNumber);
 
         // 3. D2 후보 준비 (D1 제외 상위 N건)
-        List<PriorArt> d2Candidates = includedPriorArts.stream()
+        List<PriorArt> d2Candidates = priorArts.stream()
                 .filter(pa -> !pa.getId().equals(d1.getId()))
                 .limit(D2_CANDIDATE_LIMIT)
                 .toList();

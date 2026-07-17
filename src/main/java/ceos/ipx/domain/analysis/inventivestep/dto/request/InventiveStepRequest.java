@@ -2,6 +2,7 @@ package ceos.ipx.domain.analysis.inventivestep.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
 /**
  * 진보성 분석 실행 요청
@@ -22,5 +23,8 @@ public record InventiveStepRequest(
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotBlank(message = "주인용 특허 출원번호는 필수입니다.")
+        @Pattern(
+                regexp = "^\\d{2}-?\\d{4}-?\\d{7}$",
+                message = "출원번호는 13자리 숫자(하이픈 포함/미포함 모두 가능)여야 합니다.")
         String primaryApplicationNumber
 ) {}

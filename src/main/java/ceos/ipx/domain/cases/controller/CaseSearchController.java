@@ -1,10 +1,10 @@
 package ceos.ipx.domain.cases.controller;
 
 import ceos.ipx.domain.cases.dto.request.SearchRequest;
+import ceos.ipx.domain.cases.dto.response.SearchCancelResponse;
 import ceos.ipx.domain.cases.dto.response.SearchStartResponse;
+import ceos.ipx.domain.cases.dto.response.SearchStatusResponse;
 import ceos.ipx.domain.cases.service.cases.CaseSearchService;
-import ceos.ipx.global.python.dto.response.search.PythonCancelResponse;
-import ceos.ipx.global.python.dto.response.search.PythonSearchStatusResponse;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -62,11 +62,11 @@ public class CaseSearchController {
                     """
     )
     @GetMapping("/{searchId}/status")
-    public ResponseEntity<ApiResponse<PythonSearchStatusResponse>> getStatus(
+    public ResponseEntity<ApiResponse<SearchStatusResponse>> getStatus(
             @Parameter(description = "검색 실행 응답으로 받은 UUID", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable String searchId
     ) {
-        PythonSearchStatusResponse response = caseSearchService.getStatus(searchId);
+        SearchStatusResponse response = caseSearchService.getStatus(searchId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
@@ -78,11 +78,11 @@ public class CaseSearchController {
                     """
     )
     @PostMapping("/{searchId}/cancel")
-    public ResponseEntity<ApiResponse<PythonCancelResponse>> cancelSearch(
+    public ResponseEntity<ApiResponse<SearchCancelResponse>> cancelSearch(
             @Parameter(description = "검색 세션 UUID")
             @PathVariable String searchId
     ) {
-        PythonCancelResponse response = caseSearchService.cancelSearch(searchId);
+        SearchCancelResponse response = caseSearchService.cancelSearch(searchId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

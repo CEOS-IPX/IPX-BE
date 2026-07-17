@@ -18,11 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
  * 구성요소 자동 추출 API
  *
  * 엔드포인트:
- *   - POST /api/components/auto-extract : AI 자동 구성요소 추출
+ *   - POST /api/seraches/components/extract : AI 자동 구성요소 추출
  */
 @Tag(name = "구성요소", description = "AI 자동 구성요소 추출 API")
 @RestController
-@RequestMapping("/api/components")
+@RequestMapping("/api/searches/components")
 @RequiredArgsConstructor
 public class ComponentController {
 
@@ -37,7 +37,7 @@ public class ComponentController {
                     - 응답의 label(A, B, C, ...)은 구성요소 순서대로 부여
                     """
     )
-    @PostMapping("/auto-extract")
+    @PostMapping("/extract")
     public ResponseEntity<ApiResponse<ComponentExtractResponse>> autoExtract(
             @RequestBody @Valid ComponentExtractRequest request
     ) {

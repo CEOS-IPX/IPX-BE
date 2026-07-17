@@ -59,21 +59,6 @@ public class PriorArtTxService {
     }
 
     /**
-     * 선행문헌 분석 포함 여부 수정
-     */
-    @Transactional
-    public PriorArt updateIncluded(
-            Long userId,
-            Long priorArtId,
-            boolean included
-    ) {
-        PriorArt priorArt = findPriorArtWithAuth(userId, priorArtId);
-        priorArt.updateIncluded(included);
-
-        return priorArt;
-    }
-
-    /**
      * 선행문헌 삭제
      *
      * 삭제 대상 선행문헌을 참조하는 분석이 존재하면

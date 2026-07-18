@@ -20,8 +20,9 @@ public class RelevanceCalculator {
 
         double percentile = (double) rank / total;
         if (percentile <= 0.2) return Relevance.VERY_HIGH;
-        else if (percentile <= 0.5) return Relevance.HIGH;
-        else if (percentile <= 0.8) return Relevance.MEDIUM;
-        else return Relevance.LOW;
+        else if (percentile <= 0.4) return Relevance.HIGH;
+        else if (percentile <= 0.6) return Relevance.MEDIUM;
+        else if (percentile <= 0.8) return Relevance.LOW;
+        else return Relevance.VERY_LOW;
     }
 }

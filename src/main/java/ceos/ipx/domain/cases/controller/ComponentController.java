@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 구성요소 자동 추출 API
  *
  * 엔드포인트:
- *   - POST /api/seraches/components/extract : AI 자동 구성요소 추출
+ *   - POST /api/searches/components/extract : AI 자동 구성요소 추출
  */
 @Tag(name = "구성요소", description = "AI 자동 구성요소 추출 API")
 @RestController

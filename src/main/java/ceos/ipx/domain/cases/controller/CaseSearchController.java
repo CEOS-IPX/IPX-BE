@@ -20,12 +20,12 @@ import org.springframework.web.bind.annotation.*;
  *
  * 엔드포인트:
  *   - POST /api/searches                     : 선행기술 탐색 실행
- *   - GET  /api/searches/{searchId}/status   : 진행 상태 조회
- *   - POST /api/searches/{searchId}/cancel   : 검색 중단
+ *   - GET  /api/searches/{caseId}/status   : 진행 상태 조회
+ *   - POST /api/searches/{caseId}/cancel   : 검색 중단
  */
 @Tag(name = "선행기술 탐색", description = "선행기술 탐색 실행 및 진행 상태 관리 API")
 @RestController
-@RequestMapping("/api/searches")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class CaseSearchController {
 
@@ -39,10 +39,10 @@ public class CaseSearchController {
                     - `caseId`가 null이면 새 사건을 생성하고, 값이 있으면 재검색으로 처리
                     - 재검색 시 기존 구성요소, 선행기술, 신규성/진보성 분석, 리포트가 모두 삭제됨
                     - 검색은 백그라운드에서 실행
-                    - 응답의 searchId로 진행 상태를 폴링해 완료 여부 확인
+                    - 응답의 caseId로 진행 상태를 폴링해 완료 여부 확인
                     """
     )
-    @PostMapping
+    @PostMapping("/searches")
     public ResponseEntity<ApiResponse<SearchStartResponse>> startSearch(
             @Parameter(hidden = true) @AuthenticationPrincipal Long userId,
             @RequestBody @Valid SearchRequest request
@@ -54,19 +54,22 @@ public class CaseSearchController {
     @Operation(
             summary = "검색 진행 상태 조회",
             description = """
-                    검색 실행 응답으로 받은 searchId로 진행 상태를 조회합니다.
+                    검색 실행 응답으로 받은 caseId로 진행 상태를 조회합니다.
                     프론트는 이 API를 폴링(예: 2초 간격)해서 완료 여부를 확인합니다.
 
                     - status: `in_progress` | `completed` | `failed` | `cancelled`
                     - completed 감지 시: `GET /api/cases/{caseId}/prior-arts`로 결과 조회
                     """
     )
-    @GetMapping("/{searchId}/status")
+    @GetMapping("/cases/{caseId}/searches/status")
     public ResponseEntity<ApiResponse<SearchStatusResponse>> getStatus(
-            @Parameter(description = "검색 실행 응답으로 받은 UUID", example = "550e8400-e29b-41d4-a716-446655440000")
-            @PathVariable String searchId
+            @Parameter(hidden = true)
+            @AuthenticationPrincipal Long userId,
+
+            @Parameter(description = "사건 ID", example = "1")
+            @PathVariable Long caseId
     ) {
-        SearchStatusResponse response = caseSearchService.getStatus(searchId);
+        SearchStatusResponse response = caseSearchService.getStatus(userId, caseId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
@@ -77,12 +80,15 @@ public class CaseSearchController {
                     이미 완료된 검색은 `cancelled=false`로 응답합니다.
                     """
     )
-    @PostMapping("/{searchId}/cancel")
+    @PostMapping("/cases/{caseId}/searches/cancel")
     public ResponseEntity<ApiResponse<SearchCancelResponse>> cancelSearch(
-            @Parameter(description = "검색 세션 UUID")
-            @PathVariable String searchId
+            @Parameter(hidden = true)
+            @AuthenticationPrincipal Long userId,
+
+            @Parameter(description = "사건 ID", example = "1")
+            @PathVariable Long caseId
     ) {
-        SearchCancelResponse response = caseSearchService.cancelSearch(searchId);
+        SearchCancelResponse response = caseSearchService.cancelSearch(userId, caseId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

@@ -7,12 +7,12 @@ import lombok.Builder;
 import java.util.List;
 
 /**
- * Python 서버에 전달할 검색 요청 DTO.
+ * Python 서버에 전달할 검색 요청 DTO
  *
- * Python 측 SearchRequest 스펙과 필드명 일치 (snake_case).
+ * Python 측 SearchRequest 스펙과 필드명 일치 (snake_case)
  *
  * Python이 요구하는 필드:
- *   - search_id (필수): Spring이 생성한 작업 ID
+ *   - case_id (필수): Spring이 생성한 사건 ID
  *   - title (필수): 발명의 명칭
  *   - description (필수): 발명의 핵심 기술 설명
  *   - technical_field (선택): 기술 분야
@@ -26,8 +26,8 @@ import java.util.List;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record PythonSearchRequest(
-        @JsonProperty("search_id")
-        String searchId,
+        @JsonProperty("case_id")
+        String caseId,
 
         String title,
 

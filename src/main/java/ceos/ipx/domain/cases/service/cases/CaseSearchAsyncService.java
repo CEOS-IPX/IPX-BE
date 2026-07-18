@@ -37,9 +37,9 @@ public class CaseSearchAsyncService {
      * "searchTaskExecutor" 스레드풀에서 실행
      */
     @Async("searchTaskExecutor")
-    public void executeSearchAsync(Long caseId, String searchId, SearchRequest request, int resultCount) {
+    public void executeSearchAsync(Long caseId, SearchRequest request, int resultCount) {
         PythonSearchRequest pyRequest = PythonSearchRequest.builder()
-                .searchId(searchId)
+                .caseId(String.valueOf(caseId))
                 .title(request.title())
                 .description(request.description())
                 .technicalField(request.technicalField())
@@ -53,8 +53,8 @@ public class CaseSearchAsyncService {
 
             // 케이스 1: Python 응답 없음 (서버 다운, timeout 등)
             if (response == null) {
-                log.error("[Search][Async] Python 응답 null: caseId={}, searchId={}", caseId, searchId);
-                searchProgressService.markFailed(searchId, "Python 서버 응답 없음");
+                log.error("[Search][Async] Python 응답 null: caseId={}", caseId);
+                searchProgressService.markFailed(caseId, "Python 서버 응답 없음");
                 return;
             }
 
@@ -62,8 +62,8 @@ public class CaseSearchAsyncService {
             // Python이 이미 mark_invalid_input 또는 취소 시 별도 처리로 Redis 상태 저장함
             // Spring은 DB 저장 없이 종료
             if (Boolean.FALSE.equals(response.isValid())) {
-                log.warn("[Search][Async] 검색 완료 (invalid): caseId={}, searchId={}, reason={}",
-                        caseId, searchId, response.reasonInvalid());
+                log.warn("[Search][Async] 검색 완료 (invalid): caseId={}, reason={}",
+                        caseId, response.reasonInvalid());
                 return;
             }
 
@@ -71,22 +71,22 @@ public class CaseSearchAsyncService {
             // Python이 이미 mark_no_results로 Redis 상태 저장함
             // Spring은 DB 저장 없이 종료
             if (response.results() == null || response.results().isEmpty()) {
-                log.info("[Search][Async] 검색 결과 0건: caseId={}, searchId={}", caseId, searchId);
+                log.info("[Search][Async] 검색 결과 0건: caseId={}", caseId);
                 return;
             }
 
             // 케이스 4: 정상 완료 + 결과 있음
             // TxService의 afterCommit 훅에서 markCompleted 호출
-            txService.saveSearchResults(caseId, searchId, response);
+            txService.saveSearchResults(caseId, response);
 
-            log.info("[Search][Async] 검색 결과 저장 완료: caseId={}, searchId={}, count={}",
-                    caseId, searchId, response.results().size());
+            log.info("[Search][Async] 검색 결과 저장 완료: caseId={}, count={}",
+                    caseId, response.results().size());
 
         } catch (Exception e) {
             // Python 호출/저장 중 예외
-            log.error("[Search][Async] Python 호출/저장 실패: caseId={}, searchId={}",
-                    caseId, searchId, e);
-            searchProgressService.markFailed(searchId, e.getMessage());
+            log.error("[Search][Async] Python 호출/저장 실패: caseId={}",
+                    caseId, e);
+            searchProgressService.markFailed(caseId, e.getMessage());
         }
     }
 }

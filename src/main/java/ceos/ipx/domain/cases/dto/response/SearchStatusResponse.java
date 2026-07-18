@@ -8,8 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "검색 진행 상태 응답")
 public record SearchStatusResponse(
 
-        @Schema(description = "검색 세션 ID", example = "550e8400-e29b-41d4-a716-446655440000")
-        String searchId,
+        @Schema(description = "사건 ID", example = "1")
+        Long caseId,
 
         @Schema(description = "진행 상태", example = "in_progress",
                 allowableValues = {"in_progress", "completed", "failed", "cancelled"})

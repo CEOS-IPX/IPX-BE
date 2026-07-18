@@ -55,7 +55,8 @@ public enum ErrorCode {
     // ===== 검색 관련 =====
     SEARCH_NOT_STARTED(HttpStatus.BAD_REQUEST, "S001", "검색이 시작되지 않았습니다."),
     SEARCH_NOT_FOUND(HttpStatus.NOT_FOUND, "S002", "검색 정보를 찾을 수 없습니다."),
-    COMPONENTS_REQUIRED(HttpStatus.BAD_REQUEST, "S003", "구성요소가 최소 1개 이상 필요합니다."),
+    SEARCH_ALREADY_IN_PROGRESS(HttpStatus.BAD_REQUEST, "S003", "검색이 진행 중입니다."),
+    COMPONENTS_REQUIRED(HttpStatus.BAD_REQUEST, "S004", "구성요소가 최소 1개 이상 필요합니다."),
 
     // ===== 선행기술 관련 =====
     PRIOR_ART_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "해당 선행기술을 찾을 수 없습니다."),

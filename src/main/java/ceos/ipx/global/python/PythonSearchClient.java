@@ -45,8 +45,8 @@ public class PythonSearchClient {
     // ============================================================
 
     public PythonSearchResultResponse executeSearch(PythonSearchRequest request) {
-        log.info("[Python] 검색 요청 시작: searchId={}, title={}",
-                request.searchId(), request.title());
+        log.info("[Python] 검색 요청 시작: caseId={}, title={}",
+                request.caseId(), request.title());
 
         PythonSearchResultResponse response;
         try {
@@ -61,16 +61,16 @@ public class PythonSearchClient {
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            throw mapException(e, "검색 요청 실패: searchId=" + request.searchId());
+            throw mapException(e, "검색 요청 실패: caseId=" + request.caseId());
         }
 
         if (response == null) {
-            log.error("[Python] 검색 응답 null: searchId={}", request.searchId());
+            log.error("[Python] 검색 응답 null: caseId={}", request.caseId());
             throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
         }
 
-        log.info("[Python] 검색 완료: searchId={}, resultCount={}",
-                request.searchId(),
+        log.info("[Python] 검색 완료: caseId={}, resultCount={}",
+                request.caseId(),
                 response.results() != null ? response.results().size() : 0);
         return response;
     }

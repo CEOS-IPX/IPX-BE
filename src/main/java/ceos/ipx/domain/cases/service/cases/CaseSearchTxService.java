@@ -158,7 +158,7 @@ public class CaseSearchTxService {
      *   3. Case.completeSearch() 호출
      */
     @Transactional
-    public void saveSearchResults(Long caseId, String searchId, PythonSearchResultResponse response) {
+    public void saveSearchResults(Long caseId,PythonSearchResultResponse response) {
         Case caseEntity = caseRepository.findById(caseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
 
@@ -181,7 +181,7 @@ public class CaseSearchTxService {
                 new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        searchProgressService.markCompleted(searchId);
+                        searchProgressService.markCompleted(caseId);
                     }
                 }
         );

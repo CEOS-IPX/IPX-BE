@@ -94,7 +94,7 @@ public class SearchProgressService {
         // in_progress 상태에서만 취소 처리
         String now = OffsetDateTime.now(ZoneOffset.UTC).toString();
         redisTemplate.opsForHash().put(key, "status", "cancelled");
-        redisTemplate.opsForHash().put(key, "step", "취소됨");
+        redisTemplate.opsForHash().put(key, "step", "선행기술 탐색 취소");
         redisTemplate.opsForHash().put(key, "updated_at", now);
 
         log.info("[SearchProgress] 검색 취소 처리: caseId={}", caseId);
@@ -134,7 +134,7 @@ public class SearchProgressService {
             String now = OffsetDateTime.now(ZoneOffset.UTC).toString();
 
             redisTemplate.opsForHash().put(key, "status", "completed");
-            redisTemplate.opsForHash().put(key, "step", "완료");
+            redisTemplate.opsForHash().put(key, "step", "선행기술 탐색 완료");
             redisTemplate.opsForHash().put(key, "progress", "100");
             redisTemplate.opsForHash().put(key, "updated_at", now);
 

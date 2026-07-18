@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-@Schema(description = "분석 리포트 생성 및 덮어쓰기 요청")
+@Schema(description = "분석 리포트 생성 요청")
 public record ReportCreateRequest(
 
         @Schema(
@@ -14,7 +14,10 @@ public record ReportCreateRequest(
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotBlank(message = "작성 변리사명은 필수입니다.")
-        @Size(max = 100, message = "작성 변리사명은 100자 이내로 입력해주세요.")
+        @Size(
+                max = 100,
+                message = "작성 변리사명은 100자 이내로 입력해주세요."
+        )
         String authorName,
 
         @Schema(
@@ -39,14 +42,7 @@ public record ReportCreateRequest(
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotBlank(message = "종합 결론은 필수입니다.")
-        String overallConclusion,
-
-        @Schema(
-                description = "기존 리포트 덮어쓰기 여부. 생략하거나 null이면 false로 처리",
-                example = "false",
-                nullable = true
-        )
-        Boolean overwrite
+        String overallConclusion
 
 ) {
 }

@@ -10,9 +10,10 @@ import ceos.ipx.domain.cases.dto.response.CaseUpdateResponse;
 import ceos.ipx.domain.cases.dto.response.RecentCaseListResponse;
 import ceos.ipx.domain.cases.service.CaseService;
 import ceos.ipx.domain.report.dto.request.ReportCreateRequest;
+import ceos.ipx.domain.report.dto.request.ReportUpdateRequest;
 import ceos.ipx.domain.report.dto.response.ReportCreateResponse;
 import ceos.ipx.domain.report.dto.response.ReportDetailResponse;
-import ceos.ipx.domain.report.service.ReportSaveResult;
+import ceos.ipx.domain.report.dto.response.ReportUpdateResponse;
 import ceos.ipx.domain.report.service.ReportService;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -142,10 +143,10 @@ public class CaseController {
     }
 
     @Operation(
-            summary = "분석 리포트 생성 및 덮어쓰기",
+            summary = "분석 리포트 생성",
             description = """
-                    신규성 분석과 진보성 분석이 모두 존재하는 사건의 분석 리포트를 저장합니다.
-                    기존 리포트가 있는 경우 overwrite가 true여야 덮어쓸 수 있습니다.
+                    신규성 분석과 진보성 분석이 모두 존재하는 사건의 분석 리포트를 최초 생성합니다.
+                    이미 분석 리포트가 존재하는 경우 RP001을 반환합니다.
                     """
     )
     @PostMapping("/{caseId}/report")
@@ -154,17 +155,34 @@ public class CaseController {
             @PathVariable Long caseId,
             @Valid @RequestBody ReportCreateRequest request
     ) {
-        ReportSaveResult result =
+        ReportCreateResponse response =
                 reportService.saveReport(userId, caseId, request);
 
-        if (result.created()) {
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(ApiResponse.ok(result.response()));
-        }
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(response));
+    }
 
-        return ResponseEntity.ok(
-                ApiResponse.ok(result.response())
+    @Operation(
+            summary = "분석 리포트 수정",
+            description = """
+                    로그인한 사용자가 자신이 소유한 사건의 분석 리포트를 부분 수정합니다.
+                    요청값이 null이거나 필드가 생략된 경우 기존 값을 유지합니다.
+                    수정 시 사건의 리포트 생성 완료 시각은 변경하지 않습니다.
+                    """
+    )
+    @PatchMapping("/{caseId}/report")
+    public ApiResponse<ReportUpdateResponse> updateReport(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long caseId,
+            @Valid @RequestBody ReportUpdateRequest request
+    ) {
+        return ApiResponse.ok(
+                reportService.updateReport(
+                        userId,
+                        caseId,
+                        request
+                )
         );
     }
 }

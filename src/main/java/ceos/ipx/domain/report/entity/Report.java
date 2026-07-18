@@ -30,7 +30,6 @@ public class Report extends BaseEntity {
     @JoinColumn(name = "case_id", nullable = false, unique = true)
     private Case caseEntity;
 
-    /** 작성 변리사 이름 */
     @Column(name = "author_name", nullable = false, length = 100)
     private String authorName;
 
@@ -40,7 +39,11 @@ public class Report extends BaseEntity {
     @Column(name = "inventive_satisfied", nullable = false)
     private Boolean inventiveSatisfied;
 
-    @Column(name = "overall_conclusion", nullable = false, columnDefinition = "TEXT")
+    @Column(
+            name = "overall_conclusion",
+            nullable = false,
+            columnDefinition = "TEXT"
+    )
     private String overallConclusion;
 
     @Builder
@@ -64,9 +67,20 @@ public class Report extends BaseEntity {
             Boolean inventiveSatisfied,
             String overallConclusion
     ) {
-        this.authorName = authorName;
-        this.noveltySatisfied = noveltySatisfied;
-        this.inventiveSatisfied = inventiveSatisfied;
-        this.overallConclusion = overallConclusion;
+        if (authorName != null) {
+            this.authorName = authorName.trim();
+        }
+
+        if (noveltySatisfied != null) {
+            this.noveltySatisfied = noveltySatisfied;
+        }
+
+        if (inventiveSatisfied != null) {
+            this.inventiveSatisfied = inventiveSatisfied;
+        }
+
+        if (overallConclusion != null) {
+            this.overallConclusion = overallConclusion.trim();
+        }
     }
 }

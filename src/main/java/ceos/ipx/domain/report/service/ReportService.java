@@ -14,8 +14,10 @@ import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.domain.cases.repository.CaseRepository;
 import ceos.ipx.domain.cases.repository.InventionComponentRepository;
 import ceos.ipx.domain.report.dto.request.ReportCreateRequest;
+import ceos.ipx.domain.report.dto.request.ReportUpdateRequest;
 import ceos.ipx.domain.report.dto.response.ReportCreateResponse;
 import ceos.ipx.domain.report.dto.response.ReportDetailResponse;
+import ceos.ipx.domain.report.dto.response.ReportUpdateResponse;
 import ceos.ipx.domain.report.entity.Report;
 import ceos.ipx.domain.report.repository.ReportRepository;
 import ceos.ipx.global.exception.BusinessException;
@@ -26,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +43,7 @@ public class ReportService {
     private final ReportRepository reportRepository;
 
     @Transactional
-    public ReportSaveResult saveReport(
+    public ReportCreateResponse saveReport(
             Long userId,
             Long caseId,
             ReportCreateRequest request
@@ -55,52 +56,58 @@ public class ReportService {
         validateCaseOwner(caseEntity, userId);
         validateAnalysisResults(caseEntity);
 
-        Optional<Report> existingReport =
-                reportRepository.findByCaseEntity(caseEntity);
-
-        boolean created;
-        Report report;
-
-        if (existingReport.isPresent()) {
-            if (!Boolean.TRUE.equals(request.overwrite())) {
-                throw new BusinessException(
-                        ErrorCode.REPORT_ALREADY_EXISTS
-                );
-            }
-
-            report = existingReport.get();
-
-            report.update(
-                    request.authorName(),
-                    request.noveltySatisfied(),
-                    request.inventiveSatisfied(),
-                    request.overallConclusion()
+        if (reportRepository.findByCaseEntity(caseEntity).isPresent()) {
+            throw new BusinessException(
+                    ErrorCode.REPORT_ALREADY_EXISTS
             );
-
-            created = false;
-        } else {
-            report = Report.builder()
-                    .caseEntity(caseEntity)
-                    .authorName(request.authorName())
-                    .noveltySatisfied(request.noveltySatisfied())
-                    .inventiveSatisfied(request.inventiveSatisfied())
-                    .overallConclusion(request.overallConclusion())
-                    .build();
-
-            reportRepository.save(report);
-
-            created = true;
         }
+
+        Report report = Report.builder()
+                .caseEntity(caseEntity)
+                .authorName(request.authorName().trim())
+                .noveltySatisfied(request.noveltySatisfied())
+                .inventiveSatisfied(request.inventiveSatisfied())
+                .overallConclusion(request.overallConclusion().trim())
+                .build();
+
+        reportRepository.save(report);
 
         caseEntity.completeReport();
 
         reportRepository.flush();
         caseRepository.flush();
 
-        ReportCreateResponse response =
-                ReportCreateResponse.of(report, caseEntity);
+        return ReportCreateResponse.of(report, caseEntity);
+    }
 
-        return new ReportSaveResult(response, created);
+    @Transactional
+    public ReportUpdateResponse updateReport(
+            Long userId,
+            Long caseId,
+            ReportUpdateRequest request
+    ) {
+        Case caseEntity = caseRepository.findById(caseId)
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.CASE_NOT_FOUND)
+                );
+
+        validateCaseOwner(caseEntity, userId);
+
+        Report report = reportRepository.findByCaseEntity(caseEntity)
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.REPORT_NOT_FOUND)
+                );
+
+        report.update(
+                request.authorName(),
+                request.noveltySatisfied(),
+                request.inventiveSatisfied(),
+                request.overallConclusion()
+        );
+
+        reportRepository.flush();
+
+        return ReportUpdateResponse.of(report, caseEntity);
     }
 
     public ReportDetailResponse getReport(

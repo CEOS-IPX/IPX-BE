@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -42,6 +44,7 @@ public class CaseSearchTxService {
     private final InventionComponentRepository componentRepository;
     private final PriorArtRepository priorArtRepository;
     private final PriorArtMapper priorArtMapper;
+    private final SearchProgressService searchProgressService;
 
     // 재검색 시 삭제해야 할 도메인을 위한 레포지토리
     private final NoveltyAnalysisRepository noveltyAnalysisRepository;
@@ -155,7 +158,7 @@ public class CaseSearchTxService {
      *   3. Case.completeSearch() 호출
      */
     @Transactional
-    public void saveSearchResults(Long caseId, PythonSearchResultResponse response) {
+    public void saveSearchResults(Long caseId, String searchId, PythonSearchResultResponse response) {
         Case caseEntity = caseRepository.findById(caseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
 
@@ -172,6 +175,16 @@ public class CaseSearchTxService {
                 priorArtRepository.save(priorArt);
             }
         }
+
+        // 트랜잭션 커밋 후 Redis 완료 상태 저장
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        searchProgressService.markCompleted(searchId);
+                    }
+                }
+        );
 
         // 3. 검색 완료 시각 갱신
         caseEntity.completeSearch();

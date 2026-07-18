@@ -11,6 +11,7 @@ import ceos.ipx.domain.cases.dto.response.RecentCaseListResponse;
 import ceos.ipx.domain.cases.service.CaseService;
 import ceos.ipx.domain.report.dto.request.ReportCreateRequest;
 import ceos.ipx.domain.report.dto.response.ReportCreateResponse;
+import ceos.ipx.domain.report.dto.response.ReportDetailResponse;
 import ceos.ipx.domain.report.service.ReportSaveResult;
 import ceos.ipx.domain.report.service.ReportService;
 import ceos.ipx.global.response.ApiResponse;
@@ -119,6 +120,24 @@ public class CaseController {
     ) {
         return ApiResponse.ok(
                 caseService.getCaseDetail(userId, caseId)
+        );
+    }
+
+    @Operation(
+            summary = "분석 리포트 상세 조회",
+            description = """
+                    로그인한 사용자가 자신이 소유한 사건의 분석 리포트를 조회합니다.
+                    사건 기본 정보, 발명 구성요소, 신규성 분석, 진보성 분석 및 종합 결론을 반환합니다.
+                    화면의 작성일은 마지막 수정 시각인 updatedAt을 사용합니다.
+                    """
+    )
+    @GetMapping("/{caseId}/report")
+    public ApiResponse<ReportDetailResponse> getReport(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long caseId
+    ) {
+        return ApiResponse.ok(
+                reportService.getReport(userId, caseId)
         );
     }
 

@@ -75,7 +75,8 @@ public enum ErrorCode {
     INVENTIVE_STEP_INSUFFICIENT_PRIOR_ARTS(HttpStatus.BAD_REQUEST, "I002", "진보성 분석에는 최소 2개의 선행기술이 필요합니다."),
 
     // ==== 분석 리포트 관련 ====
-    REPORT_ALREADY_EXISTS(HttpStatus.CONFLICT, "RP001", "이미 분석 리포트가 존재합니다.");
+    REPORT_ALREADY_EXISTS(HttpStatus.CONFLICT, "RP001", "이미 분석 리포트가 존재합니다."),
+    REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "RP002", "분석 리포트를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

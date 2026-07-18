@@ -14,8 +14,16 @@ public interface NoveltyComparisonRepository extends JpaRepository<NoveltyCompar
     /**
      * component와 fetch join으로 N+1 방지
      */
-    @Query("SELECT c FROM NoveltyComparison c JOIN FETCH c.component WHERE c.analysis = :analysis")
-    List<NoveltyComparison> findAllByAnalysis(@Param("analysis") NoveltyAnalysis analysis);
+    @Query("""
+        SELECT c
+        FROM NoveltyComparison c
+        JOIN FETCH c.component
+        WHERE c.analysis = :analysis
+        ORDER BY c.component.displayOrder ASC
+        """)
+    List<NoveltyComparison> findAllByAnalysis(
+            @Param("analysis") NoveltyAnalysis analysis
+    );
 
     @Modifying
     @Query("DELETE FROM NoveltyComparison c " +

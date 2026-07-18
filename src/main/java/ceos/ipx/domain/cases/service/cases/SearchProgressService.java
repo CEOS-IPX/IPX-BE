@@ -102,6 +102,29 @@ public class SearchProgressService {
     }
 
     /**
+     * 프론트 폴링 대비
+     * Spring이 Python 호출 전에 Redis에 초기 상태 저장
+     */
+    public void markStarted(Long caseId) {
+        try {
+            String key = KEY_PREFIX + caseId;
+            String now = OffsetDateTime.now(ZoneOffset.UTC).toString();
+
+            redisTemplate.opsForHash().put(key, "status", "in_progress");
+            redisTemplate.opsForHash().put(key, "step", "검색 준비 중");
+            redisTemplate.opsForHash().put(key, "progress", "0");
+            redisTemplate.opsForHash().put(key, "started_at", now);
+            redisTemplate.opsForHash().put(key, "updated_at", now);
+            redisTemplate.opsForHash().put(key, "reason_invalid", "");
+            redisTemplate.opsForHash().put(key, "error", "");
+
+            log.info("[SearchProgress] 검색 시작 상태 저장: caseId={}", caseId);
+        } catch (Exception e) {
+            log.error("[SearchProgress] Redis 검색 시작 상태 업데이트 실패: caseId={}", caseId, e);
+        }
+    }
+
+    /**
      * DB 저장 완료 후 Redis 상태를 completed로 변경
      * CaseSearchTxService.saveSearchResults의 afterCommit 훅에서 호출
      */

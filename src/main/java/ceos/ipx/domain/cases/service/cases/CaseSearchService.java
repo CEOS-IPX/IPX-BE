@@ -53,6 +53,8 @@ public class CaseSearchService {
                 ? request.resultCount()
                 : DEFAULT_RESULT_COUNT;
 
+        searchProgressService.markStarted(caseEntity.getId());
+
         // 4. 비동기 Python 호출
         asyncService.executeSearchAsync(caseEntity.getId(), request, resultCount);
 

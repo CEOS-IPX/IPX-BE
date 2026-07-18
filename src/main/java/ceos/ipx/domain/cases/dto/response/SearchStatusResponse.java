@@ -12,7 +12,7 @@ public record SearchStatusResponse(
         Long caseId,
 
         @Schema(description = "진행 상태", example = "in_progress",
-                allowableValues = {"in_progress", "completed", "failed", "cancelled"})
+                allowableValues = {"in_progress", "completed", "failed", "invalid_input", "no_results", "cancelled"})
         String status,
 
         @Schema(description = "현재 단계 설명", example = "검색 의도 분석 중")

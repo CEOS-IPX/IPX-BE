@@ -61,11 +61,6 @@ public class CaseQueryTxService {
      */
     @Transactional(readOnly = true)
     public List<PriorArt> findPriorArts(Case caseEntity) {
-        List<PriorArt> priorArts = priorArtRepository.findByCaseEntityOrderByRrfScoreDescCreatedAtAsc(caseEntity);
-
-        if (priorArts.isEmpty())
-            throw new BusinessException(ErrorCode.PRIOR_ART_NOT_FOUND);
-
-        return priorArts;
+        return priorArtRepository.findByCaseEntityOrderByRrfScoreDescCreatedAtAsc(caseEntity);
     }
 }

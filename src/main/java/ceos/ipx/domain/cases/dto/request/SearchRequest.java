@@ -2,11 +2,7 @@ package ceos.ipx.domain.cases.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.util.List;
 
@@ -50,7 +46,10 @@ public record SearchRequest(
         List<String> userInputIpc,
 
         @Schema(description = "탐색 전 반드시 결과에 포함할 출원번호 리스트", example = "[\"1020200012345\"]", nullable = true)
-        List<String> requiredApplicationNumbers,
+        List<@Pattern(
+                regexp = "^\\d{2}-?\\d{4}-?\\d{7}$",
+                message = "출원번호는 13자리 숫자(하이픈 포함/미포함 모두 가능)여야합니다."
+        )String> requiredApplicationNumbers,
 
         @Schema(description = "결과 개수 (10~30). null이면 기본값 10 적용", example = "10", minimum = "10", maximum = "30", nullable = true)
         @Min(value = 10, message = "결과 개수는 최소 10개여야 합니다.")

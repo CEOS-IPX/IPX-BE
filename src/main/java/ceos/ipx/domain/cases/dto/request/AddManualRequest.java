@@ -3,6 +3,7 @@ package ceos.ipx.domain.cases.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
@@ -28,5 +29,10 @@ public record AddManualRequest(
         @NotNull(message = "출원번호 목록은 필수입니다.")
         @NotEmpty(message = "최소 1개 이상의 출원번호를 입력해주세요.")
         @Size(max = 10, message = "한 번에 최대 10개까지 추가 가능합니다.")
-        List<@NotNull(message = "출원번호에 null이 포함될 수 없습니다.") String> applicationNumbers
+        List<
+                @NotNull(message = "출원번호에 null이 포함될 수 없습니다.")
+                @Pattern(
+                        regexp = "^\\d{2}-?\\d{4}-?\\d{7}$",
+                        message = "출원번호는 13자리 숫자(하이픈 포함/미포함 모두 가능)여야 합니다."
+                )String> applicationNumbers
 ) {}

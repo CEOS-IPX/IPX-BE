@@ -20,6 +20,8 @@ public interface NoveltyAnalysisRepository extends JpaRepository<NoveltyAnalysis
             "WHERE n.caseEntity = :caseEntity")
     Optional<NoveltyAnalysis> findByCaseEntity(Case caseEntity);
 
+    boolean existsByD1PriorArt_Id(Long priorArtId);
+
     @Modifying
     @Query("DELETE FROM NoveltyAnalysis n WHERE n.caseEntity.id = :caseId")
     void deleteAllByCaseId(@Param("caseId") Long caseId);

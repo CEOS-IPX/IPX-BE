@@ -166,14 +166,18 @@ public record InventiveStepResponse(
             String applicantName,
 
             @Schema(description = "출원일", example = "2017-08-11")
-            LocalDate applicationDate
+            LocalDate applicationDate,
+
+            @Schema(description = "등록상태", example = "등록")
+            String legalStatus
     ) {
         public static PriorArtBrief of(PriorArt priorArt) {
             return new PriorArtBrief(
                     priorArt.getApplicationNumber(),
                     priorArt.getTitle(),
                     priorArt.getApplicantName(),
-                    priorArt.getApplicationDate()
+                    priorArt.getApplicationDate(),
+                    priorArt.getLegalStatus()
             );
         }
     }
@@ -193,7 +197,8 @@ public record InventiveStepResponse(
               - SIMPLE_DESIGN:
                   { "changed_component_label": "C", "changed_component_name": "...", "non_obviousness": "..." }
             
-            recommended=false 일 때 content는 빈 Map.
+            recommended=false 일 때 content는 카테고리별 안내 문구(placeholder)로 채워진 Map이 반환됨.
+                    프론트는 이 값을 입력 필드의 placeholder로 표시하고, 사용자 입력값으로 대체하여 저장한다.
             """)
     public record ArgumentDto(
 

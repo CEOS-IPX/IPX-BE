@@ -8,7 +8,7 @@ import java.util.List;
  * Python 서버의 검색 응답 DTO.
  *
  * Python /search 엔드포인트 응답 스펙:
- *   - search_id
+ *   - case_id
  *   - is_valid: 요청이 유효했는지
  *   - reason_invalid: is_valid=false일 때 사유
  *   - intent: 검색 의도 (IntentResult)
@@ -16,8 +16,8 @@ import java.util.List;
  *   - debug: 디버그 정보 (Optional)
  */
 public record PythonSearchResultResponse(
-        @JsonProperty("search_id")
-        String searchId,
+        @JsonProperty("case_id")
+        String caseId,
 
         @JsonProperty("is_valid")
         Boolean isValid,

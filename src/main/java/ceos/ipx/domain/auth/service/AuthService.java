@@ -59,8 +59,17 @@ public class AuthService {
             throw new BusinessException(ErrorCode.PASSWORD_CONFIRM_MISMATCH);
         }
 
-        // TODO: 이메일 인증 토큰 검증 로직 추가
-        termsAgreementService.validateRequiredTermsAgreements(request.termsAgreements());
+        String verifiedEmail = emailVerificationService.getEmailBySignupVerificationToken(
+                request.verificationToken()
+        );
+
+        if (!verifiedEmail.equals(request.email())) {
+            throw new BusinessException(ErrorCode.EMAIL_VERIFICATION_EMAIL_MISMATCH);
+        }
+
+        termsAgreementService.validateRequiredTermsAgreements(
+                request.termsAgreements()
+        );
 
         String encodedPassword = passwordEncoder.encode(request.password());
 
@@ -74,7 +83,16 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
-        termsAgreementService.saveTermsAgreements(savedUser, request.termsAgreements());
+
+        termsAgreementService.saveTermsAgreements(
+                savedUser,
+                request.termsAgreements()
+        );
+
+        emailVerificationService.deleteSignupVerification(
+                request.verificationToken(),
+                request.email()
+        );
 
         return new SignUpResponse(
                 savedUser.getId(),

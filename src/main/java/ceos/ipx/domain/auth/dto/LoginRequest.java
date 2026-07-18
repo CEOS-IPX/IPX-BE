@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 @Schema(description = "일반 로그인 요청")
 public record LoginRequest(
 
-        @Schema(description = "이메일", example = "test@example.com")
+        @Schema(description = "이메일", example = "abcd@gmail.com")
         @NotBlank(message = "이메일은 필수입니다.")
         @Email(message = "이메일 형식이 올바르지 않습니다.")
         String email,

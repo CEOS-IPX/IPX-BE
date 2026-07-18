@@ -29,12 +29,17 @@ public class EmailVerificationService {
 
     private final StringRedisTemplate stringRedisTemplate;
 
-    public String createAndSaveVerificationCode(EmailVerificationPurpose purpose, String email) {
+    public String createAndSaveVerificationCode(
+            EmailVerificationPurpose purpose,
+            String email
+    ) {
         String cooldownKey = createCooldownKey(purpose, email);
 
         Boolean hasCooldown = stringRedisTemplate.hasKey(cooldownKey);
         if (Boolean.TRUE.equals(hasCooldown)) {
-            throw new BusinessException(ErrorCode.EMAIL_VERIFICATION_RESEND_TOO_EARLY);
+            throw new BusinessException(
+                    ErrorCode.EMAIL_VERIFICATION_RESEND_TOO_EARLY
+            );
         }
 
         String code = generateCode();
@@ -54,16 +59,24 @@ public class EmailVerificationService {
         return code;
     }
 
-    public String verifyVerificationCode(EmailVerificationPurpose purpose, String email, String code) {
+    public String verifyVerificationCode(
+            EmailVerificationPurpose purpose,
+            String email,
+            String code
+    ) {
         String codeKey = createCodeKey(purpose, email);
         String savedCode = stringRedisTemplate.opsForValue().get(codeKey);
 
         if (savedCode == null) {
-            throw new BusinessException(ErrorCode.EMAIL_VERIFICATION_CODE_EXPIRED);
+            throw new BusinessException(
+                    ErrorCode.EMAIL_VERIFICATION_CODE_EXPIRED
+            );
         }
 
         if (!savedCode.equals(code)) {
-            throw new BusinessException(ErrorCode.EMAIL_VERIFICATION_CODE_MISMATCH);
+            throw new BusinessException(
+                    ErrorCode.EMAIL_VERIFICATION_CODE_MISMATCH
+            );
         }
 
         stringRedisTemplate.delete(codeKey);
@@ -85,6 +98,96 @@ public class EmailVerificationService {
         return verificationToken;
     }
 
+    public String getEmailBySignupVerificationToken(
+            String verificationToken
+    ) {
+        String tokenKey = createTokenKey(
+                EmailVerificationPurpose.SIGNUP,
+                verificationToken
+        );
+
+        String email = stringRedisTemplate.opsForValue().get(tokenKey);
+
+        if (email == null) {
+            throw new BusinessException(
+                    ErrorCode.EMAIL_VERIFICATION_TOKEN_EXPIRED
+            );
+        }
+
+        return email;
+    }
+
+    public void deleteSignupVerification(
+            String verificationToken,
+            String email
+    ) {
+        stringRedisTemplate.delete(
+                createTokenKey(
+                        EmailVerificationPurpose.SIGNUP,
+                        verificationToken
+                )
+        );
+
+        stringRedisTemplate.delete(
+                createVerifiedKey(
+                        EmailVerificationPurpose.SIGNUP,
+                        email
+                )
+        );
+
+        stringRedisTemplate.delete(
+                createCodeKey(
+                        EmailVerificationPurpose.SIGNUP,
+                        email
+                )
+        );
+    }
+
+    public String getEmailByPasswordResetToken(
+            String verificationToken
+    ) {
+        String tokenKey = createTokenKey(
+                EmailVerificationPurpose.PASSWORD_RESET,
+                verificationToken
+        );
+
+        String email = stringRedisTemplate.opsForValue().get(tokenKey);
+
+        if (email == null) {
+            throw new BusinessException(
+                    ErrorCode.PASSWORD_RESET_TOKEN_EXPIRED
+            );
+        }
+
+        return email;
+    }
+
+    public void deletePasswordResetVerification(
+            String verificationToken,
+            String email
+    ) {
+        stringRedisTemplate.delete(
+                createTokenKey(
+                        EmailVerificationPurpose.PASSWORD_RESET,
+                        verificationToken
+                )
+        );
+
+        stringRedisTemplate.delete(
+                createVerifiedKey(
+                        EmailVerificationPurpose.PASSWORD_RESET,
+                        email
+                )
+        );
+
+        stringRedisTemplate.delete(
+                createCodeKey(
+                        EmailVerificationPurpose.PASSWORD_RESET,
+                        email
+                )
+        );
+    }
+
     public int getCodeExpiresInSeconds() {
         return CODE_EXPIRES_IN_SECONDS;
     }
@@ -100,40 +203,48 @@ public class EmailVerificationService {
     private String generateCode() {
         SecureRandom random = new SecureRandom();
         int number = random.nextInt(1_000_000);
-        return String.format("%06d", number);
+
+        return String.format("%0" + CODE_LENGTH + "d", number);
     }
 
-    public String getEmailByPasswordResetToken(String verificationToken) {
-        String tokenKey = createTokenKey(EmailVerificationPurpose.PASSWORD_RESET, verificationToken);
-        String email = stringRedisTemplate.opsForValue().get(tokenKey);
-
-        if (email == null) {
-            throw new BusinessException(ErrorCode.PASSWORD_RESET_TOKEN_EXPIRED);
-        }
-
-        return email;
+    private String createCodeKey(
+            EmailVerificationPurpose purpose,
+            String email
+    ) {
+        return CODE_KEY_PREFIX
+                + purpose.getValue()
+                + ":"
+                + email;
     }
 
-    public void deletePasswordResetVerification(String verificationToken, String email) {
-        stringRedisTemplate.delete(createTokenKey(EmailVerificationPurpose.PASSWORD_RESET, verificationToken));
-        stringRedisTemplate.delete(createVerifiedKey(EmailVerificationPurpose.PASSWORD_RESET, email));
-        stringRedisTemplate.delete(createCodeKey(EmailVerificationPurpose.PASSWORD_RESET, email));
+    private String createCooldownKey(
+            EmailVerificationPurpose purpose,
+            String email
+    ) {
+        return COOLDOWN_KEY_PREFIX
+                + purpose.getValue()
+                + ":"
+                + email;
     }
 
-    private String createCodeKey(EmailVerificationPurpose purpose, String email) {
-        return CODE_KEY_PREFIX + purpose.getValue() + ":" + email;
+    private String createVerifiedKey(
+            EmailVerificationPurpose purpose,
+            String email
+    ) {
+        return VERIFIED_KEY_PREFIX
+                + purpose.getValue()
+                + ":"
+                + email;
     }
 
-    private String createCooldownKey(EmailVerificationPurpose purpose, String email) {
-        return COOLDOWN_KEY_PREFIX + purpose.getValue() + ":" + email;
-    }
-
-    private String createVerifiedKey(EmailVerificationPurpose purpose, String email) {
-        return VERIFIED_KEY_PREFIX + purpose.getValue() + ":" + email;
-    }
-
-    private String createTokenKey(EmailVerificationPurpose purpose, String verificationToken) {
-        return TOKEN_KEY_PREFIX + purpose.getValue() + ":" + verificationToken;
+    private String createTokenKey(
+            EmailVerificationPurpose purpose,
+            String verificationToken
+    ) {
+        return TOKEN_KEY_PREFIX
+                + purpose.getValue()
+                + ":"
+                + verificationToken;
     }
 
     private String createVerificationToken() {

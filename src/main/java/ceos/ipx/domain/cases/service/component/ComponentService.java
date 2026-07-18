@@ -13,11 +13,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 구성요소 자동 추출 서비스
+ * 구성요소 관련 서비스
  *
- * Python 호출만 하고 DB 저장은 하지 않음:
- *   - 자동 추출 결과는 사용자가 편집
- *   - 저장은 검색 실행 시 POST /api/searches에서 처리
+ * - 발명 정보를 기반으로 AI 구성요소 자동 추출
+ * - 자동 추출 결과는 DB에 저장하지 않음
  */
 @Slf4j
 @Service
@@ -28,41 +27,48 @@ public class ComponentService {
 
     /**
      * 발명 정보를 바탕으로 구성요소 자동 추출
-     * Python LLM 호출
-     * label은 Spring에서 배열 순서대로 부여 (A, B, C, ...)
+     *
+     * Python LLM을 호출하며 DB에는 저장하지 않는다.
+     * 자동 추출 결과는 사용자가 편집한 뒤 검색 실행 시 저장한다.
      */
     public ComponentExtractResponse extract(ComponentExtractRequest request) {
-        PythonComponentExtractRequest pyRequest = PythonComponentExtractRequest.builder()
-                .title(request.title())
-                .description(request.description())
-                .technicalField(request.technicalField())
-                .build();
+        PythonComponentExtractRequest pyRequest =
+                PythonComponentExtractRequest.builder()
+                        .title(request.title())
+                        .description(request.description())
+                        .technicalField(request.technicalField())
+                        .build();
 
-        PythonComponentExtractResponse response = pythonComponentClient.extract(pyRequest);
+        PythonComponentExtractResponse response =
+                pythonComponentClient.extract(pyRequest);
 
         return buildResponse(response);
     }
 
-    private ComponentExtractResponse buildResponse(PythonComponentExtractResponse response) {
+    private ComponentExtractResponse buildResponse(
+            PythonComponentExtractResponse response
+    ) {
         List<PythonComponentExtractResponse.Component> pyComponents =
                 response != null && response.components() != null
                         ? response.components()
                         : Collections.emptyList();
 
-        List<ComponentExtractResponse.ComponentDto> dtos = pyComponents.stream()
-                .map(c -> new ComponentExtractResponse.ComponentDto(
-                        toLabel(pyComponents.indexOf(c)),
-                        c.name(),
-                        c.description()
-                ))
-                .toList();
+        List<ComponentExtractResponse.ComponentDto> dtos =
+                pyComponents.stream()
+                        .map(component ->
+                                new ComponentExtractResponse.ComponentDto(
+                                        toLabel(pyComponents.indexOf(component)),
+                                        component.name(),
+                                        component.description()
+                                )
+                        )
+                        .toList();
 
         return new ComponentExtractResponse(dtos);
     }
 
     /**
-     * 0 → "A", 1 → "B", 2 → "C", ...
-     * 26 이상은 실무적으로 없을 것
+     * 0 → A, 1 → B, 2 → C, ...
      */
     private String toLabel(int index) {
         return String.valueOf((char) ('A' + index));

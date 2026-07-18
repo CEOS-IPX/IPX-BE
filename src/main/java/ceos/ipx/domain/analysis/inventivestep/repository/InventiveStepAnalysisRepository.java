@@ -23,6 +23,11 @@ public interface InventiveStepAnalysisRepository extends JpaRepository<Inventive
             "WHERE a.caseEntity = :caseEntity")
     Optional<InventiveStepAnalysis> findByCaseEntityWithArts(@Param("caseEntity") Case caseEntity);
 
+    boolean existsByPrimaryArt_IdOrSecondaryArt_Id(
+            Long primaryArtId,
+            Long secondaryArtId
+    );
+
     @Modifying
     @Query("DELETE FROM InventiveStepAnalysis i WHERE i.caseEntity.id = :caseId")
     void deleteAllByCaseId(@Param("caseId") Long caseId);

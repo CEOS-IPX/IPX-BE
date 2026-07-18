@@ -1,12 +1,9 @@
 package ceos.ipx.domain.cases.dto.response;
 
-import ceos.ipx.global.python.dto.response.search.PythonSearchStatusResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 검색 진행 상태 응답
- *
- * Python 응답(snake_case)을 camelCase로 변환해 프론트에 전달
  */
 @Schema(description = "검색 진행 상태 응답")
 public record SearchStatusResponse(
@@ -22,14 +19,12 @@ public record SearchStatusResponse(
         String step,
 
         @Schema(description = "진행률 (0~100)", example = "45", minimum = "0", maximum = "100")
-        Integer progress
+        Integer progress,
+
+        @Schema(description = "의도 해석 실패 이유", example = "발명의 명칭과 핵심 기술 설명을 구체적으로 입력해 주세요.")
+        String reasonInvalid,
+
+        @Schema(description = "실패 시 에러 메시지", example = "null", nullable = true)
+        String error
 ) {
-    public static SearchStatusResponse from(PythonSearchStatusResponse response) {
-        return new SearchStatusResponse(
-                response.searchId(),
-                response.status(),
-                response.step(),
-                response.progress()
-        );
-    }
 }

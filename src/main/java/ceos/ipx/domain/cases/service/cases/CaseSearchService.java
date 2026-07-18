@@ -29,7 +29,7 @@ public class CaseSearchService {
 
     private final CaseSearchTxService txService;
     private final CaseSearchAsyncService asyncService;
-    private final PythonSearchClient pythonSearchClient;
+    private final SearchProgressService searchProgressService;
 
     /**
      * 선행기술 탐색
@@ -38,36 +38,31 @@ public class CaseSearchService {
         // 1. Case 및 구성요소 저장 (별도 Service의 트랜잭션 경유)
         Case caseEntity = txService.prepareCaseAndComponents(userId, request);
 
-        // 2. search_id 발급
-        String searchId = UUID.randomUUID().toString();
-
-        // 3. resultCount 기본값 처리
+        // 2. resultCount 기본값 처리
         int resultCount = request.resultCount() != null
                 ? request.resultCount()
                 : DEFAULT_RESULT_COUNT;
 
-        // 4. 비동기 Python 호출
-        asyncService.executeSearchAsync(caseEntity.getId(), searchId, request, resultCount);
+        // 3. 비동기 Python 호출
+        asyncService.executeSearchAsync(caseEntity.getId(), request, resultCount);
 
-        log.info("[Search] 검색 시작: caseId={}, searchId={}, userId={}",
-                caseEntity.getId(), searchId, userId);
+        log.info("[Search] 검색 시작: caseId={}, userId={}",
+                caseEntity.getId(), userId);
 
-        return SearchStartResponse.of(searchId, caseEntity.getId());
+        return SearchStartResponse.of(caseEntity.getId());
     }
 
     /**
      * 검색 진행 상태 조회
-     * Python /search/{searchId}/status 응답을 camelCase DTO로 변환
      */
     public SearchStatusResponse getStatus(String searchId) {
-        return SearchStatusResponse.from(pythonSearchClient.getStatus(searchId));
+        return searchProgressService.getStatus(searchId);
     }
 
     /**
      * 검색 중단 요청
-     * Python /search/{searchId}/cancel 응답을 camelCase DTO로 변환
      */
     public SearchCancelResponse cancelSearch(String searchId) {
-        return SearchCancelResponse.from(pythonSearchClient.cancel(searchId));
+        return searchProgressService.cancel(searchId);
     }
 }

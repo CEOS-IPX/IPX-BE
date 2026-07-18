@@ -5,9 +5,7 @@ import ceos.ipx.global.exception.ErrorCode;
 import ceos.ipx.global.python.dto.request.search.PythonAddManualRequest;
 import ceos.ipx.global.python.dto.request.search.PythonSearchRequest;
 import ceos.ipx.global.python.dto.response.search.PythonAddManualResponse;
-import ceos.ipx.global.python.dto.response.search.PythonCancelResponse;
 import ceos.ipx.global.python.dto.response.search.PythonSearchResultResponse;
-import ceos.ipx.global.python.dto.response.search.PythonSearchStatusResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,8 +25,6 @@ import java.util.concurrent.TimeoutException;
  *
  * 엔드포인트:
  *   - POST /search              : 검색 실행 (동기 블로킹, @Async 스레드에서 호출)
- *   - GET  /search/{id}/status  : 진행 상태 조회
- *   - POST /search/{id}/cancel  : 검색 중단
  *   - POST /search/add-manual   : 수동 특허 추가
  *
  * 예외 처리 원칙:
@@ -76,64 +72,6 @@ public class PythonSearchClient {
         log.info("[Python] 검색 완료: searchId={}, resultCount={}",
                 request.searchId(),
                 response.results() != null ? response.results().size() : 0);
-        return response;
-    }
-
-    // ============================================================
-    // 진행 상태 조회
-    // ============================================================
-
-    public PythonSearchStatusResponse getStatus(String searchId) {
-        PythonSearchStatusResponse response;
-        try {
-            response = pythonWebClient.get()
-                    .uri("/search/{searchId}/status", searchId)
-                    .retrieve()
-                    .onStatus(HttpStatusCode::isError, this::handleError)
-                    .bodyToMono(PythonSearchStatusResponse.class)
-                    .block(Duration.ofSeconds(10));
-
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            throw mapException(e, "상태 조회 실패: searchId=" + searchId);
-        }
-
-        if (response == null) {
-            log.error("[Python] 상태 응답 null: searchId={}", searchId);
-            throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
-        }
-
-        return response;
-    }
-
-    // ============================================================
-    // 검색 중단
-    // ============================================================
-
-    public PythonCancelResponse cancel(String searchId) {
-        PythonCancelResponse response;
-        try {
-            response = pythonWebClient.post()
-                    .uri("/search/{searchId}/cancel", searchId)
-                    .retrieve()
-                    .onStatus(HttpStatusCode::isError, this::handleError)
-                    .bodyToMono(PythonCancelResponse.class)
-                    .block(Duration.ofSeconds(10));
-
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            throw mapException(e, "검색 중단 실패: searchId=" + searchId);
-        }
-
-        if (response == null) {
-            log.error("[Python] 취소 응답 null: searchId={}", searchId);
-            throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
-        }
-
-        log.info("[Python] 검색 중단 완료: searchId={}, cancelled={}",
-                searchId, response.cancelled());
         return response;
     }
 

@@ -28,27 +28,12 @@ public record PriorArtResponse(
         @Schema(description = "출원일", example = "2017-08-11")
         LocalDate applicationDate,
 
-        @Schema(description = "등록일", example = "2018-08-09", nullable = true)
-        LocalDate registrationDate,
-
         @Schema(
                 description = "법적 상태",
                 example = "등록",
                 allowableValues = {"공개", "등록", "소멸", "취하", "거절"}
         )
         String legalStatus,
-
-        @Schema(description = "IPC 분류 코드", example = "[\"G06F 11/00\", \"G06N 3/08\"]")
-        List<String> ipcCodes,
-
-        @Schema(description = "LLM 요약", example = "본 발명은 딥러닝 모델을 이용한 자동차 부품 고장 진단 방법을 개시한다.")
-        String summary,
-
-        @Schema(description = "기술 목적", example = "차량 부품의 고장을 사전 예측하여 유지보수 비용을 절감")
-        String purpose,
-
-        @Schema(description = "핵심 특징", example = "[\"OBD 데이터 활용\", \"CNN 기반 예측 모델\", \"실시간 진단\"]")
-        List<String> features,
 
         @Schema(description = "매칭된 키워드", example = "[\"딥러닝\", \"자동차\", \"진단\"]")
         List<String> keywords,
@@ -75,12 +60,7 @@ public record PriorArtResponse(
                 priorArt.getTitle(),
                 priorArt.getApplicantName(),
                 priorArt.getApplicationDate(),
-                priorArt.getRegistrationDate(),
                 priorArt.getLegalStatus(),
-                priorArt.getIpcCodes(),
-                priorArt.getSummary(),
-                priorArt.getTechPurpose(),
-                priorArt.getKeyFeatures(),
                 priorArt.getMatchedKeywords(),
                 priorArt.getReason(),
                 priorArt.getRrfScore(),

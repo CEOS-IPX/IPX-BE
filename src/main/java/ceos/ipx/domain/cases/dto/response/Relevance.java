@@ -9,5 +9,6 @@ public enum Relevance {
     VERY_HIGH,
     HIGH,
     MEDIUM,
-    LOW
+    LOW,
+    VERY_LOW
 }

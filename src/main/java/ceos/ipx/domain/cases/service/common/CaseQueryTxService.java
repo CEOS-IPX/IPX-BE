@@ -36,11 +36,14 @@ public class CaseQueryTxService {
      */
     @Transactional(readOnly = true)
     public Case findCaseWithAuth(Long userId, Long caseId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-        return caseRepository.findByIdAndUser(caseId, user)
+        Case caseEntity = caseRepository.findById(caseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
+
+        if (!caseEntity.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.CASE_ACCESS_DENIED);
+        }
+
+        return caseEntity;
     }
 
     /**

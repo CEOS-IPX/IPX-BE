@@ -9,16 +9,23 @@ import ceos.ipx.domain.cases.dto.response.CaseListResponse;
 import ceos.ipx.domain.cases.dto.response.CaseUpdateResponse;
 import ceos.ipx.domain.cases.dto.response.RecentCaseListResponse;
 import ceos.ipx.domain.cases.service.CaseService;
+import ceos.ipx.domain.report.dto.request.ReportCreateRequest;
+import ceos.ipx.domain.report.dto.response.ReportCreateResponse;
+import ceos.ipx.domain.report.service.ReportSaveResult;
+import ceos.ipx.domain.report.service.ReportService;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CaseController {
 
     private final CaseService caseService;
+    private final ReportService reportService;
 
     @Operation(
             summary = "사건 목록 조회",
@@ -111,6 +119,33 @@ public class CaseController {
     ) {
         return ApiResponse.ok(
                 caseService.getCaseDetail(userId, caseId)
+        );
+    }
+
+    @Operation(
+            summary = "분석 리포트 생성 및 덮어쓰기",
+            description = """
+                    신규성 분석과 진보성 분석이 모두 존재하는 사건의 분석 리포트를 저장합니다.
+                    기존 리포트가 있는 경우 overwrite가 true여야 덮어쓸 수 있습니다.
+                    """
+    )
+    @PostMapping("/{caseId}/report")
+    public ResponseEntity<ApiResponse<ReportCreateResponse>> saveReport(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long caseId,
+            @Valid @RequestBody ReportCreateRequest request
+    ) {
+        ReportSaveResult result =
+                reportService.saveReport(userId, caseId, request);
+
+        if (result.created()) {
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(ApiResponse.ok(result.response()));
+        }
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(result.response())
         );
     }
 }

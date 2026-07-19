@@ -1,7 +1,6 @@
 package ceos.ipx.domain.analysis.novelty.entity;
 
 import ceos.ipx.domain.cases.entity.InventionComponent;
-import ceos.ipx.domain.cases.entity.PriorArt;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -13,7 +12,10 @@ import lombok.NoArgsConstructor;
 @Table(
         name = "novelty_comparisons",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_nc_analysis_component", columnNames = {"analysis_id", "component_id"})
+                @UniqueConstraint(
+                        name = "uk_nc_analysis_component",
+                        columnNames = {"analysis_id", "component_id"}
+                )
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -42,15 +44,25 @@ public class NoveltyComparison {
     private String citation;
 
     @Builder
-    private NoveltyComparison(NoveltyAnalysis noveltyAnalysis,
-                              InventionComponent component,
-                              ComparisonResult comparisonResult,
-                              String disclosureText,
-                              String citation) {
+    private NoveltyComparison(
+            NoveltyAnalysis noveltyAnalysis,
+            InventionComponent component,
+            ComparisonResult comparisonResult,
+            String disclosureText,
+            String citation
+    ) {
         this.analysis = noveltyAnalysis;
         this.component = component;
         this.comparisonResult = comparisonResult;
         this.disclosureText = disclosureText;
+        this.citation = citation;
+    }
+
+    public void updateComparison(
+            ComparisonResult comparisonResult,
+            String citation
+    ) {
+        this.comparisonResult = comparisonResult;
         this.citation = citation;
     }
 }

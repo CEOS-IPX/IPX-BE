@@ -68,6 +68,7 @@ public enum ErrorCode {
 
     // ==== 신규성 분석 관련 ====
     NOVELTY_ANALYSIS_NOT_FOUND(HttpStatus.NOT_FOUND, "N001", "신규성 분석 결과가 존재하지 않습니다."),
+    NOVELTY_COMPARISON_NOT_FOUND(HttpStatus.NOT_FOUND, "N002", "신규성 비교 결과가 존재하지 않습니다."),
 
     // ==== 진보성 분석 관련 ====
     INVENTIVE_STEP_ANALYSIS_NOT_FOUND(HttpStatus.NOT_FOUND, "I003", "진보성 분석 결과가 존재하지 않습니다."),

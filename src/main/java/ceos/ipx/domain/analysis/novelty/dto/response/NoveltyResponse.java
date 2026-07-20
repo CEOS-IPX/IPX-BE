@@ -33,7 +33,7 @@ public record NoveltyResponse(
         PriorArtBrief primaryArt,
 
         @Schema(description = "전체 유사도 판단", example = "HIGH",
-                allowableValues = {"VERY_HIGH", "HIGH", "MEDIUM", "LOW"})
+                allowableValues = {"VERY_HIGH", "HIGH", "MEDIUM", "LOW", "VERY_LOW"})
         NoveltyVerdict overallSimilarity,
 
         @Schema(description = "신규성 판단 결론 문구", example = "본 발명은 D1과 상당 부분 유사하나 일부 구성요소에서 신규성이 인정될 여지가 있음")

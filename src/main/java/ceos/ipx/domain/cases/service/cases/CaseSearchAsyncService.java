@@ -1,6 +1,8 @@
 package ceos.ipx.domain.cases.service.cases;
 
 import ceos.ipx.domain.cases.dto.request.SearchRequest;
+import ceos.ipx.domain.cases.entity.Case;
+import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.python.PythonSearchClient;
 import ceos.ipx.global.python.dto.request.search.PythonSearchRequest;
 import ceos.ipx.global.python.dto.response.search.PythonSearchResultResponse;
@@ -51,14 +53,7 @@ public class CaseSearchAsyncService {
         try {
             PythonSearchResultResponse response = pythonSearchClient.executeSearch(pyRequest);
 
-            // 케이스 1: Python 응답 없음 (서버 다운, timeout 등)
-            if (response == null) {
-                log.error("[Search][Async] Python 응답 null: caseId={}", caseId);
-                searchProgressService.markFailed(caseId, "Python 서버 응답 없음");
-                return;
-            }
-
-            // 케이스 2: is_valid=false (사용자 입력 부적절 또는 취소)
+            // 케이스 1: is_valid=false (사용자 입력 부적절 또는 취소)
             // Python이 이미 mark_invalid_input 또는 취소 시 별도 처리로 Redis 상태 저장함
             // Spring은 DB 저장 없이 종료
             if (Boolean.FALSE.equals(response.isValid())) {
@@ -67,7 +62,7 @@ public class CaseSearchAsyncService {
                 return;
             }
 
-            // 케이스 3: results 비어있음 (검색 결과 0건)
+            // 케이스 2: results 비어있음 (검색 결과 0건)
             // Python이 이미 mark_no_results로 Redis 상태 저장함
             // Spring은 DB 저장 없이 종료
             if (response.results() == null || response.results().isEmpty()) {
@@ -75,18 +70,23 @@ public class CaseSearchAsyncService {
                 return;
             }
 
-            // 케이스 4: 정상 완료 + 결과 있음
+            // 케이스 3: 정상 완료 + 결과 있음
             // TxService의 afterCommit 훅에서 markCompleted 호출
             txService.saveSearchResults(caseId, response);
 
             log.info("[Search][Async] 검색 결과 저장 완료: caseId={}, count={}",
                     caseId, response.results().size());
 
+        } catch (BusinessException e) {
+            log.error("[Search][Async] 비즈니스 예외 발생: caseId={}, errorCode={}", caseId, e.getErrorCode(), e);
+
+            searchProgressService.markFailed(caseId, e.getErrorCode().getMessage());
+
         } catch (Exception e) {
-            // Python 호출/저장 중 예외
-            log.error("[Search][Async] Python 호출/저장 실패: caseId={}",
-                    caseId, e);
-            searchProgressService.markFailed(caseId, e.getMessage());
+            log.error("[Search][Async] 예상치 못한 시스템 예외 발생 (DB 또는 기타): caseId={}", caseId, e);
+
+            // 지저분한 영어 에러 대신, 안내 문구 저장
+            searchProgressService.markFailed(caseId, "검색 결과를 처리하는 중 서버 오류가 발생했습니다.");
         }
     }
 }

@@ -40,19 +40,20 @@ public class CaseSearchService {
      */
     public SearchStartResponse startSearch(Long userId, SearchRequest request) {
 
-        // 1. Case 및 구성요소 저장 (별도 Service의 트랜잭션 경유)
-        Case caseEntity = txService.prepareCaseAndComponents(userId, request);
-
-        // 2. 재검색 시 진행 중 상태 확인
+        // 0. 재검색 시 진행 중 상태 확인
         if (request.caseId() != null) {
-            checkNotInProgress(caseEntity.getId());
+            checkNotInProgress(request.caseId());
         }
 
-        // 3. resultCount 기본값 처리
+        // 1. Case, 구성요소 저장 (별도 Service의 트랜잭션 경유) 및 Redis 시작 상태 저장
+        Case caseEntity = txService.prepareSearch(userId, request);
+
+        // 2. resultCount 기본값 처리
         int resultCount = request.resultCount() != null
                 ? request.resultCount()
                 : DEFAULT_RESULT_COUNT;
 
+        // 3. Redis에 탐색 시작 상태 저장
         searchProgressService.markStarted(caseEntity.getId());
 
         // 4. 비동기 Python 호출
@@ -80,6 +81,14 @@ public class CaseSearchService {
         return searchProgressService.cancel(caseId);
     }
 
+    private void verifyOwnership(Long userId, Long caseId) {
+        Case caseEntity = caseRepository.findById(caseId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
+        if (!caseEntity.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.CASE_ACCESS_DENIED);
+        }
+    }
+
     private void checkNotInProgress(Long caseId) {
         try {
             SearchStatusResponse status = searchProgressService.getStatus(caseId);
@@ -92,14 +101,6 @@ public class CaseSearchService {
                 return;
             }
             throw e;
-        }
-    }
-
-    private void verifyOwnership(Long userId, Long caseId) {
-        Case caseEntity = caseRepository.findById(caseId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
-        if (!caseEntity.getUser().getId().equals(userId)) {
-            throw new BusinessException(ErrorCode.CASE_ACCESS_DENIED);
         }
     }
 }

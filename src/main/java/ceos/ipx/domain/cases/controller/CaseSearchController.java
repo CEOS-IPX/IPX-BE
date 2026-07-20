@@ -20,8 +20,8 @@ import org.springframework.web.bind.annotation.*;
  *
  * 엔드포인트:
  *   - POST /api/searches                     : 선행기술 탐색 실행
- *   - GET  /api/searches/{caseId}/status   : 진행 상태 조회
- *   - POST /api/searches/{caseId}/cancel   : 검색 중단
+ *   - GET  /api/cases/{caseId}/searches/status   : 진행 상태 조회
+ *   - POST /api/cases/{caseId}/searches/cancel   : 검색 중단
  */
 @Tag(name = "선행기술 탐색", description = "선행기술 탐색 실행 및 진행 상태 관리 API")
 @RestController

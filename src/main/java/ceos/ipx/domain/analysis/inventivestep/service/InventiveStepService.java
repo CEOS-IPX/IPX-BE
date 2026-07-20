@@ -62,7 +62,10 @@ public class InventiveStepService {
         // 1. 사전 조회
         Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
         List<InventionComponent> components = caseQueryTxService.findComponents(caseEntity);
+
         List<PriorArt> priorArts = caseQueryTxService.findPriorArts(caseEntity);
+        if (priorArts.isEmpty())
+            throw new BusinessException(ErrorCode.PRIOR_ART_NOT_FOUND);
 
         // 2. D1 확정
         PriorArt d1 = findD1(priorArts, primaryApplicationNumber);

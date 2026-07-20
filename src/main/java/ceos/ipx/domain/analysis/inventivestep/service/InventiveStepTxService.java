@@ -44,12 +44,7 @@ public class InventiveStepTxService {
 
     @Transactional(readOnly = true)
     public List<InventiveArgument> findArguments(InventiveStepAnalysis analysis) {
-        List<InventiveArgument> arguments = argumentRepository.findAllByAnalysis(analysis);
-
-        if (arguments.isEmpty())
-            throw new BusinessException(ErrorCode.INVENTIVE_ARGUMENT_NOT_FOUND);
-
-        return arguments;
+        return argumentRepository.findAllByAnalysis(analysis);
     }
 
     /**

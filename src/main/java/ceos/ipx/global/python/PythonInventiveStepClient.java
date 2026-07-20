@@ -195,15 +195,8 @@ public class PythonInventiveStepClient {
 
         if (e instanceof WebClientRequestException) {
             log.error("[Python][InventiveStep] 연결 실패: {}", context, e);
-            return new BusinessException(ErrorCode.PYTHON_SERVER_TIMEOUT);
-        }
-
-        if (e instanceof WebClientResponseException webEx) {
-            log.error("[Python][InventiveStep] 오류 응답: {}, status={}",
-                    context, webEx.getStatusCode(), e);
             return new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
         }
-
         log.error("[Python][InventiveStep] 예외: {}", context, e);
         return new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
     }

@@ -77,7 +77,10 @@ public enum ErrorCode {
 
     // ==== 분석 리포트 관련 ====
     REPORT_ALREADY_EXISTS(HttpStatus.CONFLICT, "RP001", "이미 분석 리포트가 존재합니다."),
-    REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "RP002", "분석 리포트를 찾을 수 없습니다.");
+    REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "RP002", "분석 리포트를 찾을 수 없습니다."),
+
+    // ==== LLM 요청 횟수 관련 ====
+    RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "RQ002", "요청 횟수 제한을 초과했습니다. 잠시 후 다시 시도해주세요.");
 
     private final HttpStatus status;
     private final String code;

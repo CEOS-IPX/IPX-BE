@@ -5,12 +5,14 @@ import ceos.ipx.domain.cases.dto.response.SearchCancelResponse;
 import ceos.ipx.domain.cases.dto.response.SearchStartResponse;
 import ceos.ipx.domain.cases.dto.response.SearchStatusResponse;
 import ceos.ipx.domain.cases.service.cases.CaseSearchService;
+import ceos.ipx.global.aop.ratelimit.RateLimit;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +44,7 @@ public class CaseSearchController {
                     - 응답의 caseId로 진행 상태를 폴링해 완료 여부 확인
                     """
     )
+    @RateLimit(apiName = "search")
     @PostMapping("/searches")
     public ResponseEntity<ApiResponse<SearchStartResponse>> startSearch(
             @Parameter(hidden = true) @AuthenticationPrincipal Long userId,

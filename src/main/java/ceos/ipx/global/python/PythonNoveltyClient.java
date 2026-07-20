@@ -83,12 +83,6 @@ public class PythonNoveltyClient {
 
         if (e instanceof WebClientRequestException) {
             log.error("[Python][Novelty] 연결 실패: {}", context, e);
-            return new BusinessException(ErrorCode.PYTHON_SERVER_TIMEOUT);
-        }
-
-        if (e instanceof WebClientResponseException webEx) {
-            log.error("[Python][Novelty] 오류 응답: {}, status={}",
-                    context, webEx.getStatusCode(), e);
             return new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
         }
 

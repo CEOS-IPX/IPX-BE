@@ -4,6 +4,7 @@ import ceos.ipx.domain.cases.dto.request.AddManualRequest;
 import ceos.ipx.domain.cases.dto.response.PriorArtListResponse;
 import ceos.ipx.domain.cases.dto.response.PriorArtResponse;
 import ceos.ipx.domain.cases.service.priorart.PriorArtService;
+import ceos.ipx.global.aop.ratelimit.RateLimit;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -60,6 +61,7 @@ public class PriorArtController {
                     - 응답: 추가 후 전체 prior_arts 목록 (기존 + 새로 추가된 것)
                     """
     )
+    @RateLimit(apiName = "manual-add")
     @PostMapping("/manual")
     public ResponseEntity<ApiResponse<PriorArtListResponse>> addManual(
             @Parameter(hidden = true) @AuthenticationPrincipal Long userId,

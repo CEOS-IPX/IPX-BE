@@ -2,6 +2,7 @@ package ceos.ipx.domain.analysis.novelty.controller;
 
 import ceos.ipx.domain.analysis.novelty.dto.response.NoveltyResponse;
 import ceos.ipx.domain.analysis.novelty.service.NoveltyService;
+import ceos.ipx.global.aop.ratelimit.RateLimit;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -48,6 +49,7 @@ public class NoveltyController {
                     - 구성요소별 대비 결과 (동일 / 유사 / 신규)
                     """
     )
+    @RateLimit(apiName = "novelty")
     @PostMapping
     public ResponseEntity<ApiResponse<NoveltyResponse>> analyze(
             @Parameter(hidden = true) @AuthenticationPrincipal Long userId,

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,7 +54,14 @@ public class SearchProgressService {
      */
     public SearchStatusResponse getStatus(Long caseId) {
         String key = KEY_PREFIX + caseId;
-        Map<Object, Object> entries = redisTemplate.opsForHash().entries(key);
+        Map<Object, Object> entries = new HashMap<>();
+
+        try{
+            entries = redisTemplate.opsForHash().entries(key);
+        } catch (Exception e) {
+            log.error("Redis 검색 진행 상태 조회 실패: caseId={}", caseId, e);
+            throw new BusinessException(ErrorCode.REDIS_ERROR);
+        }
 
         if (entries.isEmpty()) {
             log.warn("[SearchProgress] 검색 세션 없음: caseId={}", caseId);
@@ -78,7 +86,13 @@ public class SearchProgressService {
      */
     public SearchCancelResponse cancel(Long caseId) {
         String key = KEY_PREFIX + caseId;
-        String currentStatus = (String) redisTemplate.opsForHash().get(key, "status");
+        String currentStatus = "";
+        try{
+            currentStatus = (String) redisTemplate.opsForHash().get(key, "status");
+        } catch (Exception e) {
+            log.error("Redis 검색 상태 조회 실패: caseId={}", caseId, e);
+            throw new BusinessException(ErrorCode.REDIS_ERROR);
+        }
 
         if (currentStatus == null) {
             log.warn("[SearchProgress] 취소 대상 없음: caseId={}", caseId);
@@ -91,14 +105,20 @@ public class SearchProgressService {
             return new SearchCancelResponse(caseId, false);
         }
 
-        // in_progress 상태에서만 취소 처리
-        String now = OffsetDateTime.now(ZoneOffset.UTC).toString();
-        redisTemplate.opsForHash().put(key, "status", "cancelled");
-        redisTemplate.opsForHash().put(key, "step", "선행기술 탐색 취소");
-        redisTemplate.opsForHash().put(key, "updated_at", now);
+        try {
+            Map<String, String> progressData = new HashMap<>();
+            progressData.put("status", "cancelled");
+            progressData.put("step", "선행기술 탐색 취소");
+            progressData.put("updated_at", OffsetDateTime.now(ZoneOffset.UTC).toString());
 
-        log.info("[SearchProgress] 검색 취소 처리: caseId={}", caseId);
-        return new SearchCancelResponse(caseId, true);
+            redisTemplate.opsForHash().putAll(key, progressData);
+
+            log.info("[SearchProgress] 검색 취소 처리: caseId={}", caseId);
+            return new SearchCancelResponse(caseId, true);
+        } catch (Exception e) {
+            log.error("[SearchProgress] Redis 검색 취소 상태 업데이트 실패: caseId={}", caseId, e);
+            throw new BusinessException(ErrorCode.REDIS_ERROR);
+        }
     }
 
     /**
@@ -106,21 +126,25 @@ public class SearchProgressService {
      * Spring이 Python 호출 전에 Redis에 초기 상태 저장
      */
     public void markStarted(Long caseId) {
-        try {
-            String key = KEY_PREFIX + caseId;
-            String now = OffsetDateTime.now(ZoneOffset.UTC).toString();
+        String key = KEY_PREFIX + caseId;
+        String now = OffsetDateTime.now(ZoneOffset.UTC).toString();
 
-            redisTemplate.opsForHash().put(key, "status", "in_progress");
-            redisTemplate.opsForHash().put(key, "step", "검색 준비 중");
-            redisTemplate.opsForHash().put(key, "progress", "0");
-            redisTemplate.opsForHash().put(key, "started_at", now);
-            redisTemplate.opsForHash().put(key, "updated_at", now);
-            redisTemplate.opsForHash().put(key, "reason_invalid", "");
-            redisTemplate.opsForHash().put(key, "error", "");
+        try {
+            Map<String, String> progressData = new HashMap<>();
+            progressData.put("status", "in_progress");
+            progressData.put("step", "검색 준비 중");
+            progressData.put("progress", "0");
+            progressData.put("started_at", now);
+            progressData.put("updated_at", now);
+            progressData.put("reason_invalid", "");
+            progressData.put("error", "");
+
+            redisTemplate.opsForHash().putAll(key, progressData);
 
             log.info("[SearchProgress] 검색 시작 상태 저장: caseId={}", caseId);
         } catch (Exception e) {
             log.error("[SearchProgress] Redis 검색 시작 상태 업데이트 실패: caseId={}", caseId, e);
+            throw new BusinessException(ErrorCode.REDIS_ERROR);
         }
     }
 
@@ -129,18 +153,38 @@ public class SearchProgressService {
      * CaseSearchTxService.saveSearchResults의 afterCommit 훅에서 호출
      */
     public void markCompleted(Long caseId) {
-        try {
-            String key = KEY_PREFIX + caseId;
-            String now = OffsetDateTime.now(ZoneOffset.UTC).toString();
+        String key = KEY_PREFIX + caseId;
+        int maxRetries = 3;
+        long backoffMs = 100;
 
-            redisTemplate.opsForHash().put(key, "status", "completed");
-            redisTemplate.opsForHash().put(key, "step", "선행기술 탐색 완료");
-            redisTemplate.opsForHash().put(key, "progress", "100");
-            redisTemplate.opsForHash().put(key, "updated_at", now);
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                Map<String, String> progressData = new HashMap<>();
+                progressData.put("status", "completed");
+                progressData.put("step", "선행기술 탐색 완료");
+                progressData.put("progress", "100");
+                progressData.put("updated_at", OffsetDateTime.now(ZoneOffset.UTC).toString());
 
-            log.info("[SearchProgress] 완료 상태 저장: caseId={}", caseId);
-        } catch (Exception e) {
-            log.error("[SearchProgress] Redis 완료 상태 업데이트 실패: caseId={}", caseId, e);
+                redisTemplate.opsForHash().putAll(key, progressData);
+                log.info("[SearchProgress] 완료 상태 저장: caseId={}, attempt={}", caseId, attempt);
+                return;
+
+            } catch (Exception e) {
+                log.warn("[SearchProgress] Redis 업데이트 실패 (재시도 {}/{}): caseId={}, error={}",
+                        attempt, maxRetries, caseId, e.getMessage());
+
+                if (attempt == maxRetries) {
+                    log.error("[SearchProgress][CRITICAL] Redis 업데이트 최종 실패: caseId={}", caseId, e);
+                    return;
+                }
+
+                try {
+                    Thread.sleep(backoffMs * attempt);  // 100ms, 200ms, 300ms
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
         }
     }
 
@@ -149,19 +193,39 @@ public class SearchProgressService {
      * Python 응답 없음, 네트워크 오류, Spring 자체 예외 등에서 호출
      */
     public void markFailed(Long caseId, String errorMessage) {
-        try {
-            String key = KEY_PREFIX + caseId;
-            String now = OffsetDateTime.now(ZoneOffset.UTC).toString();
+        String key = KEY_PREFIX + caseId;
+        int maxRetries = 3;
+        long backoffMs = 100;
 
-            redisTemplate.opsForHash().put(key, "status", "failed");
-            redisTemplate.opsForHash().put(key, "step", "시스템 오류");
-            redisTemplate.opsForHash().put(key, "updated_at", now);
-            redisTemplate.opsForHash().put(key, "error",
-                    errorMessage != null ? errorMessage : "알 수 없는 오류");
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
 
-            log.info("[SearchProgress] 실패 상태 저장: caseId={}, error={}", caseId, errorMessage);
-        } catch (Exception e) {
-            log.error("[SearchProgress] Redis 실패 상태 업데이트 실패: caseId={}", caseId, e);
+            try {
+                Map<String, String> progressData = new HashMap<>();
+                progressData.put("status", "failed");
+                progressData.put("step", "시스템 오류");
+                progressData.put("updated_at", OffsetDateTime.now(ZoneOffset.UTC).toString());
+                progressData.put("error", errorMessage != null ? errorMessage : "알 수 없는 오류");
+
+                redisTemplate.opsForHash().putAll(key, progressData);
+
+                log.info("[SearchProgress] 실패 상태 저장: caseId={}, error={}", caseId, errorMessage);
+                return;
+            } catch (Exception e) {
+                log.warn("[SearchProgress] Redis 실패 상태 업데이트 실패 (재시도 {}/{}): caseId={}, error={}",
+                        attempt, maxRetries, caseId, e.getMessage());
+
+                if (attempt == maxRetries) {
+                    log.error("[SearchProgress][CRITICAL] Redis 업데이트 최종 실패: caseId={}", caseId, e);
+                    return;
+                }
+
+                try {
+                    Thread.sleep(backoffMs * attempt);  // 100ms, 200ms, 300ms
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
         }
     }
 

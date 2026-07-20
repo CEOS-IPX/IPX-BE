@@ -5,6 +5,7 @@ import ceos.ipx.domain.analysis.inventivestep.repository.InventiveStepAnalysisRe
 import ceos.ipx.domain.analysis.novelty.repository.NoveltyAnalysisRepository;
 import ceos.ipx.domain.analysis.novelty.repository.NoveltyComparisonRepository;
 import ceos.ipx.domain.cases.dto.request.SearchRequest;
+import ceos.ipx.domain.cases.dto.response.SearchStatusResponse;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.InventionComponent;
 import ceos.ipx.domain.cases.entity.PriorArt;
@@ -61,7 +62,8 @@ public class CaseSearchTxService {
      *   - 기존 하위 데이터 전체 삭제 (구성요소, 선행기술, 신규성/진보성 분석, 리포트)
      */
     @Transactional
-    public Case prepareCaseAndComponents(Long userId, SearchRequest request) {
+    public Case prepareSearch(Long userId, SearchRequest request) {
+
         // 1. User 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -160,7 +162,7 @@ public class CaseSearchTxService {
     @Transactional
     public void saveSearchResults(Long caseId,PythonSearchResultResponse response) {
         Case caseEntity = caseRepository.findById(caseId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
+                .orElseThrow(()-> new BusinessException(ErrorCode.CASE_NOT_FOUND));
 
         // 1. Case.keywords 갱신 (intent.keywords 저장)
         if (response.intent() != null && response.intent().keywords() != null) {

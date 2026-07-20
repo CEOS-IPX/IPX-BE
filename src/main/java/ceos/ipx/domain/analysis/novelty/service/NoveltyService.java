@@ -55,7 +55,10 @@ public class NoveltyService {
         // 1. 사전 조회
         Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
         List<InventionComponent> components = caseQueryTxService.findComponents(caseEntity);
+
         List<PriorArt> priorArts = caseQueryTxService.findPriorArts(caseEntity);
+        if (priorArts.isEmpty())
+            throw new BusinessException(ErrorCode.PRIOR_ART_NOT_FOUND);
 
         // 2. 상위 3건 선정
         List<PriorArt> topPriorArts = priorArts.stream()
@@ -66,6 +69,7 @@ public class NoveltyService {
         List<String> appNums = topPriorArts.stream()
                 .map(PriorArt::getApplicationNumber)
                 .toList();
+
         List<PatentDocument> documents = openSearchClient.mgetByApplicationNumbers(appNums);
         Map<String, PatentDocument> docMap = documents.stream()
                 .collect(Collectors.toMap(PatentDocument::applicationNumber, d -> d));

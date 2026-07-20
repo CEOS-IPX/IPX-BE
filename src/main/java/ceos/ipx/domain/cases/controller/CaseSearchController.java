@@ -5,12 +5,14 @@ import ceos.ipx.domain.cases.dto.response.SearchCancelResponse;
 import ceos.ipx.domain.cases.dto.response.SearchStartResponse;
 import ceos.ipx.domain.cases.dto.response.SearchStatusResponse;
 import ceos.ipx.domain.cases.service.cases.CaseSearchService;
+import ceos.ipx.global.aop.ratelimit.RateLimit;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,8 +22,8 @@ import org.springframework.web.bind.annotation.*;
  *
  * 엔드포인트:
  *   - POST /api/searches                     : 선행기술 탐색 실행
- *   - GET  /api/searches/{caseId}/status   : 진행 상태 조회
- *   - POST /api/searches/{caseId}/cancel   : 검색 중단
+ *   - GET  /api/cases/{caseId}/searches/status   : 진행 상태 조회
+ *   - POST /api/cases/{caseId}/searches/cancel   : 검색 중단
  */
 @Tag(name = "선행기술 탐색", description = "선행기술 탐색 실행 및 진행 상태 관리 API")
 @RestController
@@ -42,6 +44,7 @@ public class CaseSearchController {
                     - 응답의 caseId로 진행 상태를 폴링해 완료 여부 확인
                     """
     )
+    @RateLimit(apiName = "search")
     @PostMapping("/searches")
     public ResponseEntity<ApiResponse<SearchStartResponse>> startSearch(
             @Parameter(hidden = true) @AuthenticationPrincipal Long userId,

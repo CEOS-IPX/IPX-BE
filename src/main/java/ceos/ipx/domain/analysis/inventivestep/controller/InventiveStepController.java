@@ -3,6 +3,7 @@ package ceos.ipx.domain.analysis.inventivestep.controller;
 import ceos.ipx.domain.analysis.inventivestep.dto.request.InventiveStepRequest;
 import ceos.ipx.domain.analysis.inventivestep.dto.response.InventiveStepResponse;
 import ceos.ipx.domain.analysis.inventivestep.service.InventiveStepService;
+import ceos.ipx.global.aop.ratelimit.RateLimit;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -48,6 +49,7 @@ public class InventiveStepController {
                     선정된 카테고리만 응답에 포함. 4개 모두 오지 않을 수 있음
                     """
     )
+    @RateLimit(apiName = "inventive-step")
     @PostMapping
     public ResponseEntity<ApiResponse<InventiveStepResponse>> analyze(
             @Parameter(hidden = true) @AuthenticationPrincipal Long userId,

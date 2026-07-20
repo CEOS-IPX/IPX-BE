@@ -3,6 +3,7 @@ package ceos.ipx.domain.cases.controller;
 import ceos.ipx.domain.cases.dto.request.ComponentExtractRequest;
 import ceos.ipx.domain.cases.dto.response.ComponentExtractResponse;
 import ceos.ipx.domain.cases.service.component.ComponentService;
+import ceos.ipx.global.aop.ratelimit.RateLimit;
 import ceos.ipx.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,6 +38,7 @@ public class ComponentController {
                     - 응답의 label(A, B, C, ...)은 구성요소 순서대로 부여
                     """
     )
+    @RateLimit(apiName = "component-extract")
     @PostMapping("/extract")
     public ResponseEntity<ApiResponse<ComponentExtractResponse>> autoExtract(
             @RequestBody @Valid ComponentExtractRequest request

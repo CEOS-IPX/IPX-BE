@@ -75,6 +75,7 @@ public enum ErrorCode {
     // ==== 진보성 분석 관련 ===
     INVENTIVE_STEP_NO_CANDIDATES(HttpStatus.BAD_REQUEST, "I001", "부인용 D2로 사용할 후보가 없습니다."),
     INVENTIVE_STEP_ANALYSIS_NOT_FOUND(HttpStatus.NOT_FOUND, "I003", "진보성 분석 결과가 존재하지 않습니다."),
+    INVENTIVE_ARGUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "I004", "진보성 분석 항목이 존재하지 않습니다."),
 
     // ==== 분석 리포트 관련 ====
     REPORT_ALREADY_EXISTS(HttpStatus.CONFLICT, "RP001", "이미 분석 리포트가 존재합니다."),

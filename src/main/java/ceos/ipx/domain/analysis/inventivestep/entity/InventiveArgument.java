@@ -17,7 +17,10 @@ import java.util.Map;
 @Table(
         name = "inventive_arguments",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_ia_analysis_type", columnNames = {"analysis_id", "argument_type"})
+                @UniqueConstraint(
+                        name = "uk_ia_analysis_type",
+                        columnNames = {"analysis_id", "argument_type"}
+                )
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -35,7 +38,10 @@ public class InventiveArgument extends BaseEntity {
     @Column(name = "argument_type", nullable = false, length = 30)
     private ArgumentType argumentType;
 
-    /** AI 추천 여부 */
+    /**
+     * 진보성 분석 생성 시 AI 추천 여부로 초기화되며,
+     * 이후 사용자가 해당 논리를 선택·적용할지 여부로 수정할 수 있다.
+     */
     @Column(nullable = false)
     private Boolean recommended;
 
@@ -51,11 +57,30 @@ public class InventiveArgument extends BaseEntity {
     private Map<String, Object> content = new HashMap<>();
 
     @Builder
-    private InventiveArgument(InventiveStepAnalysis analysis, ArgumentType argumentType,
-                              Boolean recommended, Map<String, Object> content) {
+    private InventiveArgument(
+            InventiveStepAnalysis analysis,
+            ArgumentType argumentType,
+            Boolean recommended,
+            Map<String, Object> content
+    ) {
         this.analysis = analysis;
         this.argumentType = argumentType;
         this.recommended = recommended != null ? recommended : false;
-        this.content = content != null ? content : new HashMap<>();
+        this.content = content != null
+                ? new HashMap<>(content)
+                : new HashMap<>();
+    }
+
+    public void update(
+            Boolean recommended,
+            Map<String, Object> content
+    ) {
+        if (recommended != null) {
+            this.recommended = recommended;
+        }
+
+        if (content != null) {
+            this.content = new HashMap<>(content);
+        }
     }
 }

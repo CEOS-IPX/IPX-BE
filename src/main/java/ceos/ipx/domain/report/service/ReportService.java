@@ -1,5 +1,6 @@
 package ceos.ipx.domain.report.service;
 
+import ceos.ipx.domain.analysis.inventivestep.entity.ArgumentType;
 import ceos.ipx.domain.analysis.inventivestep.entity.InventiveArgument;
 import ceos.ipx.domain.analysis.inventivestep.entity.InventiveStepAnalysis;
 import ceos.ipx.domain.analysis.inventivestep.repository.InventiveArgumentRepository;
@@ -26,8 +27,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -155,17 +159,7 @@ public class ReportService {
 
         List<InventiveArgument> arguments =
                 inventiveArgumentRepository
-                        .findAllByAnalysis(inventiveStepAnalysis)
-                        .stream()
-                        .sorted(
-                                Comparator.comparingInt(
-                                        argument ->
-                                                argument
-                                                        .getArgumentType()
-                                                        .ordinal()
-                                )
-                        )
-                        .toList();
+                        .findAllByAnalysis(inventiveStepAnalysis);
 
         return ReportDetailResponse.builder()
                 .reportId(report.getId())
@@ -284,6 +278,32 @@ public class ReportService {
             InventiveStepAnalysis analysis,
             List<InventiveArgument> arguments
     ) {
+        Map<ArgumentType, InventiveArgument> argumentMap =
+                arguments.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        InventiveArgument::getArgumentType,
+                                        Function.identity()
+                                )
+                        );
+
+        List<ReportDetailResponse.InventiveArgumentResponse>
+                argumentResponses =
+                Arrays.stream(ArgumentType.values())
+                        .map(argumentType -> {
+                            InventiveArgument argument =
+                                    argumentMap.get(argumentType);
+
+                            return argument == null
+                                    ? toEmptyInventiveArgumentResponse(
+                                    argumentType
+                            )
+                                    : toInventiveArgumentResponse(
+                                    argument
+                            );
+                        })
+                        .toList();
+
         return ReportDetailResponse
                 .InventiveStepAnalysisResponse
                 .builder()
@@ -300,14 +320,7 @@ public class ReportService {
                                 analysis.getSecondaryArt()
                         )
                 )
-                .arguments(
-                        arguments.stream()
-                                .map(
-                                        this::
-                                                toInventiveArgumentResponse
-                                )
-                                .toList()
-                )
+                .arguments(argumentResponses)
                 .build();
     }
 
@@ -327,6 +340,21 @@ public class ReportService {
                 )
                 .recommended(argument.getRecommended())
                 .content(argument.getContent())
+                .build();
+    }
+
+    private ReportDetailResponse.InventiveArgumentResponse
+    toEmptyInventiveArgumentResponse(
+            ArgumentType argumentType
+    ) {
+        return ReportDetailResponse
+                .InventiveArgumentResponse
+                .builder()
+                .argumentId(null)
+                .argumentType(argumentType.name())
+                .argumentTypeLabel(argumentType.getLabel())
+                .recommended(false)
+                .content(Map.of())
                 .build();
     }
 

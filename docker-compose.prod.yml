@@ -64,6 +64,8 @@ services:
       POSTGRES_PORT: 5432
       OPENSEARCH_HOST: opensearch
       OPENSEARCH_PORT: 9200
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

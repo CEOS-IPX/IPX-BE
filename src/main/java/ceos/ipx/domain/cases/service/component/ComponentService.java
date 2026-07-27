@@ -2,12 +2,18 @@ package ceos.ipx.domain.cases.service.component;
 
 import ceos.ipx.domain.cases.dto.request.ComponentExtractRequest;
 import ceos.ipx.domain.cases.dto.response.ComponentExtractResponse;
+import ceos.ipx.domain.cases.dto.response.ComponentListResponse;
+import ceos.ipx.domain.cases.entity.Case;
+import ceos.ipx.domain.cases.entity.InventionComponent;
+import ceos.ipx.domain.cases.repository.InventionComponentRepository;
+import ceos.ipx.domain.cases.service.common.CaseQueryTxService;
 import ceos.ipx.global.python.PythonComponentClient;
 import ceos.ipx.global.python.dto.request.search.PythonComponentExtractRequest;
 import ceos.ipx.global.python.dto.response.search.PythonComponentExtractResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,6 +22,7 @@ import java.util.List;
  * 구성요소 관련 서비스
  *
  * - 발명 정보를 기반으로 AI 구성요소 자동 추출
+ * - 특정 사건에 저장된 구성요소 목록 조회
  * - 자동 추출 결과는 DB에 저장하지 않음
  */
 @Slf4j
@@ -24,6 +31,26 @@ import java.util.List;
 public class ComponentService {
 
     private final PythonComponentClient pythonComponentClient;
+    private final InventionComponentRepository inventionComponentRepository;
+    private final CaseQueryTxService caseQueryTxService;
+
+    /**
+     * 특정 사건에 저장된 구성요소 목록 조회
+     *
+     * - 사건 존재 여부 및 소유자 권한 검증
+     * - displayOrder 오름차순 조회
+     * - 구성요소가 없으면 빈 목록 반환
+     */
+    @Transactional(readOnly = true)
+    public ComponentListResponse getComponents(Long userId, Long caseId) {
+        Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
+
+        List<InventionComponent> components =
+                inventionComponentRepository
+                        .findByCaseEntityOrderByDisplayOrderAsc(caseEntity);
+
+        return ComponentListResponse.of(caseId, components);
+    }
 
     /**
      * 발명 정보를 바탕으로 구성요소 자동 추출

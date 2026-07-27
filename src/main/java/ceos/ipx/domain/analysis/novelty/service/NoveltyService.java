@@ -115,8 +115,15 @@ public class NoveltyService {
         log.info("[Novelty] 완료: caseId={}, analysisId={}, similarity={}",
                 caseId, analysis.getId(), response.overallSimilarity());
 
-        // 8. 응답 조립
-        return NoveltyResponse.ofPython(analysis, d1, response, labelToComponentMap);
+        // 8. 저장된 비교 결과 조회 후 응답 조립
+        List<NoveltyComparison> savedComparisons =
+                txService.findComparisons(analysis);
+
+        return NoveltyResponse.ofEntities(
+                analysis,
+                savedComparisons,
+                mapper
+        );
     }
 
     /**

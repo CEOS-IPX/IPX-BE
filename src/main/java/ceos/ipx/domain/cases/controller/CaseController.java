@@ -32,6 +32,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ceos.ipx.domain.cases.dto.response.ComponentListResponse;
+import ceos.ipx.domain.cases.service.component.ComponentService;
 
 @Tag(name = "Case", description = "사건 관리 API")
 @RestController
@@ -41,6 +43,7 @@ public class CaseController {
 
     private final CaseService caseService;
     private final ReportService reportService;
+    private final ComponentService componentService;
 
     @Operation(
             summary = "사건 목록 조회",
@@ -121,6 +124,20 @@ public class CaseController {
     ) {
         return ApiResponse.ok(
                 caseService.getCaseDetail(userId, caseId)
+        );
+    }
+
+    @Operation(
+            summary = "구성요소 목록 조회",
+            description = "특정 사건에 저장된 발명 구성요소를 표시 순서대로 조회합니다."
+    )
+    @GetMapping("/{caseId}/components")
+    public ApiResponse<ComponentListResponse> getComponents(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long caseId
+    ) {
+        return ApiResponse.ok(
+                componentService.getComponents(userId, caseId)
         );
     }
 

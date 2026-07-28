@@ -5,6 +5,7 @@ import ceos.ipx.domain.analysis.inventivestep.entity.InventiveArgument;
 import ceos.ipx.domain.analysis.inventivestep.entity.InventiveStepAnalysis;
 import ceos.ipx.domain.analysis.inventivestep.repository.InventiveArgumentRepository;
 import ceos.ipx.domain.analysis.inventivestep.repository.InventiveStepAnalysisRepository;
+import ceos.ipx.domain.analysis.novelty.entity.ComparisonResult;
 import ceos.ipx.domain.analysis.novelty.entity.NoveltyAnalysis;
 import ceos.ipx.domain.analysis.novelty.entity.NoveltyComparison;
 import ceos.ipx.domain.analysis.novelty.repository.NoveltyAnalysisRepository;
@@ -14,7 +15,6 @@ import ceos.ipx.domain.cases.entity.InventionComponent;
 import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.domain.cases.repository.CaseRepository;
 import ceos.ipx.domain.cases.repository.InventionComponentRepository;
-import ceos.ipx.domain.report.dto.request.ReportCreateRequest;
 import ceos.ipx.domain.report.dto.request.ReportUpdateRequest;
 import ceos.ipx.domain.report.dto.response.ReportCreateResponse;
 import ceos.ipx.domain.report.dto.response.ReportDetailResponse;
@@ -46,11 +46,14 @@ public class ReportService {
     private final InventiveArgumentRepository inventiveArgumentRepository;
     private final ReportRepository reportRepository;
 
+    /**
+     * 저장된 신규성·진보성 분석 결과를 바탕으로
+     * 분석 리포트를 자동 생성한다.
+     */
     @Transactional
-    public ReportCreateResponse saveReport(
+    public ReportCreateResponse createReport(
             Long userId,
-            Long caseId,
-            ReportCreateRequest request
+            Long caseId
     ) {
         Case caseEntity = caseRepository.findById(caseId)
                 .orElseThrow(() ->
@@ -58,7 +61,6 @@ public class ReportService {
                 );
 
         validateCaseOwner(caseEntity, userId);
-        validateAnalysisResults(caseEntity);
 
         if (reportRepository.findByCaseEntity(caseEntity).isPresent()) {
             throw new BusinessException(
@@ -66,12 +68,54 @@ public class ReportService {
             );
         }
 
+        NoveltyAnalysis noveltyAnalysis =
+                noveltyAnalysisRepository.findByCaseEntity(caseEntity)
+                        .orElseThrow(() ->
+                                new BusinessException(
+                                        ErrorCode.NOVELTY_ANALYSIS_NOT_FOUND
+                                )
+                        );
+
+        InventiveStepAnalysis inventiveStepAnalysis =
+                inventiveStepAnalysisRepository
+                        .findByCaseEntity(caseEntity)
+                        .orElseThrow(() ->
+                                new BusinessException(
+                                        ErrorCode.INVENTIVE_STEP_ANALYSIS_NOT_FOUND
+                                )
+                        );
+
+        List<NoveltyComparison> comparisons =
+                noveltyComparisonRepository
+                        .findAllByAnalysis(noveltyAnalysis);
+
+        List<InventiveArgument> arguments =
+                inventiveArgumentRepository
+                        .findAllByAnalysis(inventiveStepAnalysis);
+
+        boolean noveltySatisfied =
+                isNoveltySatisfied(comparisons);
+
+        List<InventiveArgument> recommendedArguments =
+                getRecommendedArguments(arguments);
+
+        boolean inventiveSatisfied =
+                !recommendedArguments.isEmpty();
+
+        String overallConclusion =
+                buildOverallConclusion(
+                        noveltyAnalysis,
+                        recommendedArguments,
+                        noveltySatisfied,
+                        inventiveSatisfied
+                );
+
         Report report = Report.builder()
                 .caseEntity(caseEntity)
-                .authorName(request.authorName().trim())
-                .noveltySatisfied(request.noveltySatisfied())
-                .inventiveSatisfied(request.inventiveSatisfied())
-                .overallConclusion(request.overallConclusion().trim())
+                .authorName(caseEntity.getUser().getName())
+                .noveltySatisfied(noveltySatisfied)
+                .inventiveSatisfied(inventiveSatisfied)
+                .overallConclusion(overallConclusion)
                 .build();
 
         reportRepository.save(report);
@@ -81,7 +125,10 @@ public class ReportService {
         reportRepository.flush();
         caseRepository.flush();
 
-        return ReportCreateResponse.of(report, caseEntity);
+        return ReportCreateResponse.of(
+                report,
+                caseEntity
+        );
     }
 
     @Transactional
@@ -111,7 +158,10 @@ public class ReportService {
 
         reportRepository.flush();
 
-        return ReportUpdateResponse.of(report, caseEntity);
+        return ReportUpdateResponse.of(
+                report,
+                caseEntity
+        );
     }
 
     public ReportDetailResponse getReport(
@@ -196,6 +246,88 @@ public class ReportService {
                 .createdAt(report.getCreatedAt())
                 .updatedAt(report.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * 신규성 비교 결과 중 NOVEL 판정이 하나라도 있으면
+     * 신규성을 충족한 것으로 판단한다.
+     */
+    private boolean isNoveltySatisfied(
+            List<NoveltyComparison> comparisons
+    ) {
+        return comparisons.stream()
+                .anyMatch(comparison ->
+                        comparison.getComparisonResult()
+                                == ComparisonResult.NOVEL
+                );
+    }
+
+    /**
+     * 진보성 논리 중 현재 추천·적용 상태인 항목만 반환한다.
+     */
+    private List<InventiveArgument> getRecommendedArguments(
+            List<InventiveArgument> arguments
+    ) {
+        return arguments.stream()
+                .filter(argument ->
+                        Boolean.TRUE.equals(
+                                argument.getRecommended()
+                        )
+                )
+                .toList();
+    }
+
+    /**
+     * 신규성 분석 결론과 추천된 진보성 논리를 조합해
+     * 리포트의 종합 결론을 자동 생성한다.
+     */
+    private String buildOverallConclusion(
+            NoveltyAnalysis noveltyAnalysis,
+            List<InventiveArgument> recommendedArguments,
+            boolean noveltySatisfied,
+            boolean inventiveSatisfied
+    ) {
+        String noveltyConclusion =
+                noveltyAnalysis.getConclusionText().trim();
+
+        String inventiveArgumentLabels =
+                recommendedArguments.stream()
+                        .map(argument ->
+                                argument.getArgumentType().getLabel()
+                        )
+                        .collect(Collectors.joining(", "));
+
+        if (noveltySatisfied && inventiveSatisfied) {
+            return String.format(
+                    "%s 또한 %s 논리가 도출되어, "
+                            + "본 발명은 신규성과 진보성을 모두 충족할 가능성이 "
+                            + "있는 것으로 판단됩니다.",
+                    noveltyConclusion,
+                    inventiveArgumentLabels
+            );
+        }
+
+        if (noveltySatisfied) {
+            return String.format(
+                    "%s 다만 적용 가능한 진보성 논리가 확인되지 않아, "
+                            + "진보성 충족 여부는 추가 검토가 필요합니다.",
+                    noveltyConclusion
+            );
+        }
+
+        if (inventiveSatisfied) {
+            return String.format(
+                    "%s %s 논리를 통한 진보성 주장은 가능하나, "
+                            + "신규성 부정 가능성에 대한 추가 검토가 필요합니다.",
+                    noveltyConclusion,
+                    inventiveArgumentLabels
+            );
+        }
+
+        return String.format(
+                "%s 신규성과 진보성 모두 추가 검토가 필요한 것으로 판단됩니다.",
+                noveltyConclusion
+        );
     }
 
     private ReportDetailResponse.ComponentResponse
@@ -389,25 +521,5 @@ public class ReportService {
                     ErrorCode.CASE_ACCESS_DENIED
             );
         }
-    }
-
-    private void validateAnalysisResults(
-            Case caseEntity
-    ) {
-        noveltyAnalysisRepository.findByCaseEntity(caseEntity)
-                .orElseThrow(() ->
-                        new BusinessException(
-                                ErrorCode.NOVELTY_ANALYSIS_NOT_FOUND
-                        )
-                );
-
-        inventiveStepAnalysisRepository
-                .findByCaseEntity(caseEntity)
-                .orElseThrow(() ->
-                        new BusinessException(
-                                ErrorCode
-                                        .INVENTIVE_STEP_ANALYSIS_NOT_FOUND
-                        )
-                );
     }
 }

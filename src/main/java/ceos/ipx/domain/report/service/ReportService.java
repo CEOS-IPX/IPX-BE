@@ -263,7 +263,7 @@ public class ReportService {
     }
 
     /**
-     * 진보성 논리 중 현재 추천·적용 상태인 항목만 반환한다.
+     * 진보성 논리 중 AI가 추천한 항목만 반환한다.
      */
     private List<InventiveArgument> getRecommendedArguments(
             List<InventiveArgument> arguments

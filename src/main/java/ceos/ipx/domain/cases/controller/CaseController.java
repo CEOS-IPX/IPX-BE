@@ -7,9 +7,10 @@ import ceos.ipx.domain.cases.dto.response.CaseDeleteResponse;
 import ceos.ipx.domain.cases.dto.response.CaseDetailResponse;
 import ceos.ipx.domain.cases.dto.response.CaseListResponse;
 import ceos.ipx.domain.cases.dto.response.CaseUpdateResponse;
+import ceos.ipx.domain.cases.dto.response.ComponentListResponse;
 import ceos.ipx.domain.cases.dto.response.RecentCaseListResponse;
 import ceos.ipx.domain.cases.service.CaseService;
-import ceos.ipx.domain.report.dto.request.ReportCreateRequest;
+import ceos.ipx.domain.cases.service.component.ComponentService;
 import ceos.ipx.domain.report.dto.request.ReportUpdateRequest;
 import ceos.ipx.domain.report.dto.response.ReportCreateResponse;
 import ceos.ipx.domain.report.dto.response.ReportDetailResponse;
@@ -32,8 +33,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ceos.ipx.domain.cases.dto.response.ComponentListResponse;
-import ceos.ipx.domain.cases.service.component.ComponentService;
 
 @Tag(name = "Case", description = "사건 관리 API")
 @RestController
@@ -160,20 +159,22 @@ public class CaseController {
     }
 
     @Operation(
-            summary = "분석 리포트 생성",
+            summary = "분석 리포트 자동 생성",
             description = """
-                    신규성 분석과 진보성 분석이 모두 존재하는 사건의 분석 리포트를 최초 생성합니다.
+                    신규성 분석과 진보성 분석 결과를 기반으로 분석 리포트를 자동 생성합니다.
+                    별도의 요청 본문은 필요하지 않습니다.
+                    작성자명은 로그인한 사용자명으로 설정합니다.
+                    신규성·진보성 충족 여부와 종합 결론은 저장된 분석 결과를 기반으로 생성합니다.
                     이미 분석 리포트가 존재하는 경우 RP001을 반환합니다.
                     """
     )
     @PostMapping("/{caseId}/report")
-    public ResponseEntity<ApiResponse<ReportCreateResponse>> saveReport(
+    public ResponseEntity<ApiResponse<ReportCreateResponse>> createReport(
             @AuthenticationPrincipal Long userId,
-            @PathVariable Long caseId,
-            @Valid @RequestBody ReportCreateRequest request
+            @PathVariable Long caseId
     ) {
         ReportCreateResponse response =
-                reportService.saveReport(userId, caseId, request);
+                reportService.createReport(userId, caseId);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)

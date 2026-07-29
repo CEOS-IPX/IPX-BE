@@ -66,6 +66,19 @@ public record PriorArtDetailResponse(
         @Schema(description = "RRF 점수", example = "0.045")
         Double rrfScore,
 
+        @Schema(
+                description = "관련도 등급",
+                example = "VERY_HIGH",
+                allowableValues = {
+                        "VERY_HIGH",
+                        "HIGH",
+                        "MEDIUM",
+                        "LOW",
+                        "VERY_LOW"
+                }
+        )
+        Relevance relevance,
+
         @Schema(description = "추천 이유", nullable = true)
         String reason,
 
@@ -88,7 +101,8 @@ public record PriorArtDetailResponse(
 
     public static PriorArtDetailResponse of(
             PriorArt priorArt,
-            PatentDocument patentDocument
+            PatentDocument patentDocument,
+            Relevance relevance
     ) {
         return new PriorArtDetailResponse(
                 priorArt.getId(),
@@ -98,7 +112,10 @@ public record PriorArtDetailResponse(
                 patentDocument.registrationNumber(),
                 patentDocument.openNumber(),
 
-                preferPostgres(priorArt.getTitle(), patentDocument.title()),
+                preferPostgres(
+                        priorArt.getTitle(),
+                        patentDocument.title()
+                ),
                 preferPostgres(
                         priorArt.getApplicantName(),
                         patentDocument.applicantName()
@@ -129,6 +146,7 @@ public record PriorArtDetailResponse(
 
                 priorArt.getSource(),
                 priorArt.getRrfScore(),
+                relevance,
                 priorArt.getReason(),
                 priorArt.getSummary(),
                 priorArt.getTechPurpose(),
@@ -138,8 +156,13 @@ public record PriorArtDetailResponse(
         );
     }
 
-    private static <T> T preferPostgres(T postgresValue, T openSearchValue) {
-        return postgresValue != null ? postgresValue : openSearchValue;
+    private static <T> T preferPostgres(
+            T postgresValue,
+            T openSearchValue
+    ) {
+        return postgresValue != null
+                ? postgresValue
+                : openSearchValue;
     }
 
     private static <T> List<T> preferPostgresList(
@@ -154,6 +177,8 @@ public record PriorArtDetailResponse(
     }
 
     private static <T> List<T> emptyIfNull(List<T> values) {
-        return values == null ? List.of() : List.copyOf(values);
+        return values == null
+                ? List.of()
+                : List.copyOf(values);
     }
 }

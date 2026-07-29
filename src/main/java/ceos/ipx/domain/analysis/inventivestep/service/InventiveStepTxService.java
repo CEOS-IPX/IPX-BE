@@ -1,5 +1,6 @@
 package ceos.ipx.domain.analysis.inventivestep.service;
 
+import ceos.ipx.domain.analysis.inventivestep.dto.response.InventiveStepResponse;
 import ceos.ipx.domain.analysis.inventivestep.entity.ArgumentType;
 import ceos.ipx.domain.analysis.inventivestep.entity.InventiveArgument;
 import ceos.ipx.domain.analysis.inventivestep.entity.InventiveStepAnalysis;
@@ -15,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -47,12 +50,41 @@ public class InventiveStepTxService {
         return argumentRepository.findAllByAnalysis(analysis);
     }
 
+    @Transactional
+    public InventiveStepResponse saveAll(
+            Long caseId,
+            PriorArt d1,
+            PriorArt d2,
+            Map<ArgumentType, Map<String, Object>> recommendedContents
+    ) {
+        // 1. 기존 삭제
+        deleteExistingAnalysis(caseId);
+
+        // 2. Case managed 상태로 조회
+        Case caseEntity = caseRepository.findById(caseId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
+
+        // 3. Analysis 저장
+        InventiveStepAnalysis analysis = saveAnalysis(caseEntity, d1, d2);
+
+        // 4. Arguments 저장
+        List<InventiveArgument> arguments = saveArguments(analysis,recommendedContents);
+
+        // 5. Case 완료 시각 갱신 (managed 엔티티, dirty checking 작동)
+        caseEntity.completeInventiveStepAnalysis();
+
+        log.info("[InventiveStep] 저장 완료: caseId={}, analysisId={}, recommended={}",
+                caseId, analysis.getId(), recommendedContents.size());
+
+        // 6. 응답 조립
+        return InventiveStepResponse.ofEntities(analysis, arguments);
+    }
+
     /**
      * Case에 기존 분석이 있으면 삭제
      * 삭제 순서: InventiveArgument → InventiveStepAnalysis (FK 관계)
      */
-    @Transactional
-    public void deleteExistingAnalysis(Long caseId) {
+    private void deleteExistingAnalysis(Long caseId) {
         argumentRepository.deleteAllByCaseId(caseId);
         analysisRepository.deleteAllByCaseId(caseId);
         log.info("[InventiveStep] 기존 분석 삭제 완료: caseId={}", caseId);
@@ -62,8 +94,7 @@ public class InventiveStepTxService {
      * InventiveStepAnalysis INSERT
      * D1, D2를 지정해서 저장
      */
-    @Transactional
-    public InventiveStepAnalysis saveAnalysis(Case caseEntity, PriorArt d1, PriorArt d2) {
+    private InventiveStepAnalysis saveAnalysis(Case caseEntity, PriorArt d1, PriorArt d2) {
         InventiveStepAnalysis analysis = InventiveStepAnalysis.builder()
                 .caseEntity(caseEntity)
                 .primaryArt(d1)
@@ -82,32 +113,28 @@ public class InventiveStepTxService {
      * AI가 선정한 카테고리: recommended=true, content 있음
      * 선정 안 된 카테고리: recommended=false, content 빈 Map
      */
-    @Transactional
-    public void saveArguments(InventiveStepAnalysis analysis,
-                              Map<ArgumentType, Map<String, Object>> recommendedContents) {
-        for (ArgumentType type : ArgumentType.values()) {
-            Map<String, Object> content = recommendedContents.get(type);
-            boolean isRecommended = content != null;
+    private List<InventiveArgument> saveArguments(
+            InventiveStepAnalysis analysis,
+            Map<ArgumentType, Map<String, Object>> recommendedContents
+    ) {
+        List<InventiveArgument> arguments = Arrays.stream(ArgumentType.values())
+                .map(type -> {
+                    Map<String, Object> content = recommendedContents.get(type);
+                    boolean isRecommended = content != null;
+                    return InventiveArgument.builder()
+                            .analysis(analysis)
+                            .argumentType(type)
+                            .recommended(isRecommended)
+                            .content(isRecommended ? content : Map.of())
+                            .build();
+                })
+                .toList();
 
-            InventiveArgument argument = InventiveArgument.builder()
-                    .analysis(analysis)
-                    .argumentType(type)
-                    .recommended(isRecommended)
-                    .content(isRecommended ? content : Map.of())
-                    .build();
-            argumentRepository.save(argument);
-        }
+        List<InventiveArgument> savedList = argumentRepository.saveAll(arguments);
+
         log.info("[InventiveStep] Arguments 저장: 4건 (추천 {}건, 해당없음 {}건)",
                 recommendedContents.size(), 4 - recommendedContents.size());
-    }
 
-    /**
-     * Case의 진보성 완료 시각 갱신
-     */
-    @Transactional
-    public void markCaseCompleted(Long caseId) {
-        Case caseEntity = caseRepository.findById(caseId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
-        caseEntity.completeInventiveStepAnalysis();
+        return savedList;
     }
 }

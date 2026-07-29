@@ -146,23 +146,8 @@ public class InventiveStepService {
         Map<ArgumentType, Map<String, Object>> recommendedContents = generateArgumentsInParallel(
                 selectedCategories, caseEntity, pyComponents, d1Info, d2Info);
 
-        // 9. DB 저장 (기존 삭제 후 새로 생성)
-                txService.deleteExistingAnalysis(caseId);
-                InventiveStepAnalysis analysis = txService.saveAnalysis(caseEntity, d1, d2);
-                txService.saveArguments(analysis, recommendedContents);
-                txService.markCaseCompleted(caseId);
-
-                log.info("[InventiveStep] 완료: caseId={}, recommended={}, notRecommended={}",
-                        caseId, recommendedContents.size(), 4 - recommendedContents.size());
-
-        // 10. 저장된 진보성 논리 조회 후 응답 조립
-                List<InventiveArgument> savedArguments =
-                        txService.findArguments(analysis);
-
-                return InventiveStepResponse.ofEntities(
-                        analysis,
-                        savedArguments
-                );
+        // 9. DB 저장 (기존 삭제 후 새로 생성) 및 응답 반환
+        return txService.saveAll(caseId, d1, d2,recommendedContents);
     }
 
     public InventiveStepResponse getAnalysis(Long userId, Long caseId) {

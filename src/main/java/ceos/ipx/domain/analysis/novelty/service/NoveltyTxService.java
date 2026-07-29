@@ -1,5 +1,6 @@
 package ceos.ipx.domain.analysis.novelty.service;
 
+import ceos.ipx.domain.analysis.novelty.dto.response.NoveltyResponse;
 import ceos.ipx.domain.analysis.novelty.entity.ComparisonResult;
 import ceos.ipx.domain.analysis.novelty.entity.NoveltyAnalysis;
 import ceos.ipx.domain.analysis.novelty.entity.NoveltyComparison;
@@ -9,6 +10,7 @@ import ceos.ipx.domain.analysis.novelty.repository.NoveltyComparisonRepository;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.InventionComponent;
 import ceos.ipx.domain.cases.entity.PriorArt;
+import ceos.ipx.domain.cases.repository.CaseRepository;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
 import ceos.ipx.global.python.dto.response.novelty.PythonComponentComparison;
@@ -18,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +42,7 @@ public class NoveltyTxService {
 
     private final NoveltyAnalysisRepository analysisRepository;
     private final NoveltyComparisonRepository comparisonRepository;
+    private final CaseRepository caseRepository;
 
     @Transactional(readOnly = true)
     public NoveltyAnalysis findAnalysis(Case caseEntity) {
@@ -50,12 +54,44 @@ public class NoveltyTxService {
         return comparisonRepository.findAllByAnalysis(analysis);
     }
 
+    @Transactional
+    public NoveltyResponse saveAll(
+            Long caseId,
+            PriorArt d1,
+            PythonNoveltyResponse response,
+            Map<String, InventionComponent> labelToComponentMap,
+            NoveltyMapper mapper
+    ) {
+        // 1. 기존 분석 삭제 (FK 순서: Comparison → Analysis)
+        deleteExistingAnalysis(caseId);
+
+        // 2. Case 재조회 (managed 상태 확보)
+        // Service에서 넘어온 caseEntity는 이전 트랜잭션에서 조회된 detached 상태
+        // dirty checking이 작동하려면 현재 트랜잭션의 영속성 컨텍스트에 있어야 함
+        Case caseEntity = caseRepository.findById(caseId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
+
+        // 3. NoveltyAnalysis 저장
+        NoveltyAnalysis analysis = saveAnalysis(caseEntity, d1, response.overallSimilarity(), response.conclusionText());
+
+        // 4. NoveltyComparison 저장 (구성요소별)
+        List<NoveltyComparison> savedComparisons = saveComparisons(response.componentResults(), labelToComponentMap, analysis);
+
+        // 5. Case 완료 시각 갱신 (managed 엔티티, dirty checking 작동)
+        caseEntity.completeNoveltyAnalysis();
+
+        log.info("[Novelty] 저장 완료: caseId={}, analysisId={}, comparisonCount={}",
+                caseId, analysis.getId(), savedComparisons.size());
+
+        // 6. 응답 DTO 조립
+        return NoveltyResponse.ofEntities(analysis, savedComparisons, mapper);
+    }
+
     /**
      * Case에 기존 분석이 있으면 삭제
      * 삭제 순서: NoveltyComparison → NoveltyAnalysis (FK 관계)
      */
-    @Transactional
-    public void deleteExistingAnalysis(Long caseId) {
+    private void deleteExistingAnalysis(Long caseId) {
         comparisonRepository.deleteAllByCaseId(caseId);
         analysisRepository.deleteAllByCaseId(caseId);
         log.info("[Novelty] 기존 분석 삭제 완료: caseId={}", caseId);
@@ -67,49 +103,52 @@ public class NoveltyTxService {
      * response            Python 응답 (overall_similarity, conclusion_text, component_results)
      * labelToComponentMap 구성요소 라벨(A, B, ...) → InventionComponent 매핑
      */
-    @Transactional
-    public NoveltyAnalysis saveResults(
-            Case caseEntity,
-            PriorArt d1,
-            PythonNoveltyResponse response,
-            Map<String, InventionComponent> labelToComponentMap
-    ) {
-        // 1. NoveltyAnalysis 저장
-        NoveltyAnalysis analysis = NoveltyAnalysis.builder()
-                .caseEntity(caseEntity)
-                .d1PriorArt(d1)
-                .overallSimilarity(NoveltyVerdict.fromLabel(response.overallSimilarity()))
-                .conclusionText(response.conclusionText())
-                .build();
-        analysis = analysisRepository.save(analysis);
-        log.info("[Novelty] Analysis 저장: id={}, d1={}, similarity={}",
-                analysis.getId(), d1.getApplicationNumber(), response.overallSimilarity());
+    private NoveltyAnalysis saveAnalysis(Case caseEntity, PriorArt d1, String overallSimilarity, String conclusionText) {
+        NoveltyAnalysis analysis = analysisRepository.save(
+                NoveltyAnalysis.builder()
+                        .caseEntity(caseEntity)
+                        .d1PriorArt(d1)
+                        .overallSimilarity(NoveltyVerdict.fromLabel(overallSimilarity))
+                        .conclusionText(conclusionText)
+                        .build()
+        );
 
-        // 2. NoveltyComparison 저장 (구성요소별)
-        if (response.componentResults() != null) {
-            for (PythonComponentComparison compResult : response.componentResults()) {
+        log.info("[Novelty] Analysis 저장: id={}, d1={}, similarity={}",
+                analysis.getId(), d1.getApplicationNumber(), overallSimilarity);
+
+        return analysis;
+    }
+
+    private List<NoveltyComparison> saveComparisons(
+            List<PythonComponentComparison> componentResults, Map<String, InventionComponent> labelToComponentMap, NoveltyAnalysis analysis
+    ) {
+        List<NoveltyComparison> savedComparisons = new ArrayList<>();
+
+        if (componentResults != null) {
+            for (PythonComponentComparison compResult : componentResults) {
                 InventionComponent component = labelToComponentMap.get(compResult.componentLabel());
+
                 if (component == null) {
                     log.warn("[Novelty] Python 응답의 라벨이 구성요소에 없음: label={}",
                             compResult.componentLabel());
                     continue;
                 }
 
-                NoveltyComparison comparison = NoveltyComparison.builder()
-                        .noveltyAnalysis(analysis)
-                        .component(component)
-                        .comparisonResult(ComparisonResult.fromLabel(compResult.result()))
-                        .disclosureText(compResult.disclosureText())
-                        .citation(compResult.citation())
-                        .build();
-                comparisonRepository.save(comparison);
+                NoveltyComparison comparison = comparisonRepository.save(
+                        NoveltyComparison.builder()
+                                .noveltyAnalysis(analysis)
+                                .component(component)
+                                .comparisonResult(ComparisonResult.fromLabel(compResult.result()))
+                                .disclosureText(compResult.disclosureText())
+                                .citation(compResult.citation())
+                                .build()
+                );
+
+                savedComparisons.add(comparison);
             }
         }
-        log.info("[Novelty] Comparisons 저장 완료");
+        log.info("[Novelty] Comparisons 저장 완료: {}건", savedComparisons.size());
 
-        // 3. Case 완료 시각 갱신
-        caseEntity.completeNoveltyAnalysis();
-
-        return analysis;
+        return savedComparisons;
     }
 }

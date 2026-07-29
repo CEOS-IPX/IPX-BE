@@ -107,23 +107,9 @@ public class NoveltyService {
                     return new BusinessException(ErrorCode.INVALID_PYTHON_RESPONSE);
                 });
 
-        // 7. DB 저장 (기존 삭제 후 새로 생성)
-        txService.deleteExistingAnalysis(caseId);
+        // 7. DB 저장 (기존 삭제 후 새로 생성) 및 응답 반환
         Map<String, InventionComponent> labelToComponentMap = mapper.buildLabelToComponentMap(components);
-        NoveltyAnalysis analysis = txService.saveResults(caseEntity, d1, response, labelToComponentMap);
-
-        log.info("[Novelty] 완료: caseId={}, analysisId={}, similarity={}",
-                caseId, analysis.getId(), response.overallSimilarity());
-
-        // 8. 저장된 비교 결과 조회 후 응답 조립
-        List<NoveltyComparison> savedComparisons =
-                txService.findComparisons(analysis);
-
-        return NoveltyResponse.ofEntities(
-                analysis,
-                savedComparisons,
-                mapper
-        );
+        return txService.saveAll(caseId, d1, response, labelToComponentMap, mapper);
     }
 
     /**

@@ -58,6 +58,7 @@ public enum ErrorCode {
     // ===== 검색 관련 ======
     SEARCH_NOT_FOUND(HttpStatus.NOT_FOUND, "S002", "검색 정보를 찾을 수 없습니다."),
     SEARCH_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "S003", "진행 중인 검색이 있습니다."),
+    INVALID_INVENTION(HttpStatus.BAD_REQUEST, "S004", "발명 설명이 특허 등록 가능한 기술적 특징을 담고 있지 않습니다."),
 
     // ===== 선행기술 관련 =====
     PRIOR_ART_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "선행기술을 찾을 수 없습니다."),

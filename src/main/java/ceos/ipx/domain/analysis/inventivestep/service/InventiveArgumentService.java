@@ -38,10 +38,7 @@ public class InventiveArgumentService {
             throw new BusinessException(ErrorCode.CASE_ACCESS_DENIED);
         }
 
-        argument.update(
-                request.recommended(),
-                request.content()
-        );
+        argument.update(request.content());
 
         return InventiveArgumentUpdateResponse.from(argument);
     }

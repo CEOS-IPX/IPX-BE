@@ -39,8 +39,7 @@ public class InventiveArgument extends BaseEntity {
     private ArgumentType argumentType;
 
     /**
-     * 진보성 분석 생성 시 AI 추천 여부로 초기화되며,
-     * 이후 사용자가 해당 논리를 선택·적용할지 여부로 수정할 수 있다.
+     * 진보성 분석 생성 시 AI 추천 여부
      */
     @Column(nullable = false)
     private Boolean recommended;
@@ -71,14 +70,7 @@ public class InventiveArgument extends BaseEntity {
                 : new HashMap<>();
     }
 
-    public void update(
-            Boolean recommended,
-            Map<String, Object> content
-    ) {
-        if (recommended != null) {
-            this.recommended = recommended;
-        }
-
+    public void update(Map<String, Object> content) {
         if (content != null) {
             this.content = new HashMap<>(content);
         }

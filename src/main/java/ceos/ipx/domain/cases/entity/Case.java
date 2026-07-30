@@ -169,11 +169,20 @@ public class Case extends BaseEntity {
     }
 
     /**
-     * 재검색 시 additionalInfo 갱신 (사용자가 새로 입력한 정보로 덮어씀)
-     * 파라미터가 null이면 해당 필드도 null로 초기화
+     * 재검색 시 Case 필드 갱신
      */
-    public void updateAdditionalInfo(String priorArtReference, String differentiationNotes,
+    public void updateAdditionalInfo(String title, String applicantName, String inventorName,
+                                     String technicalField, String description,
+                                     List<String> userInputIpc,
+                                     String priorArtReference, String differentiationNotes,
                                      String measurementConditions, String measurementResults) {
+        this.title = title;
+        this.applicantName = applicantName;
+        this.inventorName = inventorName;
+        this.technicalField = technicalField;
+        this.description = description;
+        this.userInputIpc = userInputIpc != null ? userInputIpc : new ArrayList<>();
+
         this.priorArtReference = priorArtReference;
         this.differentiationNotes = differentiationNotes;
         this.measurementConditions = measurementConditions;

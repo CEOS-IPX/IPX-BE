@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -80,7 +81,7 @@ public class CaseSearchTxService {
                     .inventorName(request.inventorName())
                     .technicalField(request.technicalField())
                     .description(request.description())
-                    .userInputIpc(request.userInputIpc())
+                    .userInputIpc(request.userInputIpc() != null ? request.userInputIpc() : new ArrayList<>())
                     .priorArtReference(info != null ? info.priorArtReference() : null)
                     .differentiationNotes(info != null ? info.differentiationNotes() : null)
                     .measurementConditions(info != null ? info.measurementConditions() : null)
@@ -95,8 +96,14 @@ public class CaseSearchTxService {
 
             resetCaseData(caseEntity);
 
-            // 재검색 시 additionalInfo도 갱신 (사용자가 새로 입력한 값으로)
+            // 재검색 시 case 갱신 (사용자가 새로 입력한 값으로)
             caseEntity.updateAdditionalInfo(
+                    request.title(),
+                    request.applicantName(),
+                    request.inventorName(),
+                    request.technicalField(),
+                    request.description(),
+                    request.userInputIpc() != null ? request.userInputIpc() : new ArrayList<>(),
                     info != null ? info.priorArtReference() : null,
                     info != null ? info.differentiationNotes() : null,
                     info != null ? info.measurementConditions() : null,

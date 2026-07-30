@@ -11,6 +11,7 @@ import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.InventionComponent;
 import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.domain.cases.repository.CaseRepository;
+import ceos.ipx.domain.report.repository.ReportRepository;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
 import ceos.ipx.global.python.dto.response.novelty.PythonComponentComparison;
@@ -43,6 +44,7 @@ public class NoveltyTxService {
     private final NoveltyAnalysisRepository analysisRepository;
     private final NoveltyComparisonRepository comparisonRepository;
     private final CaseRepository caseRepository;
+    private final ReportRepository reportRepository;
 
     @Transactional(readOnly = true)
     public NoveltyAnalysis findAnalysis(Case caseEntity) {
@@ -94,6 +96,8 @@ public class NoveltyTxService {
     private void deleteExistingAnalysis(Long caseId) {
         comparisonRepository.deleteAllByCaseId(caseId);
         analysisRepository.deleteAllByCaseId(caseId);
+        reportRepository.deleteAllByCaseId(caseId);
+
         log.info("[Novelty] 기존 분석 삭제 완료: caseId={}", caseId);
     }
 

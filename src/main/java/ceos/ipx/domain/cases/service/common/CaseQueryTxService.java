@@ -6,6 +6,7 @@ import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.domain.cases.repository.CaseRepository;
 import ceos.ipx.domain.cases.repository.InventionComponentRepository;
 import ceos.ipx.domain.cases.repository.PriorArtRepository;
+import ceos.ipx.domain.report.repository.ReportRepository;
 import ceos.ipx.domain.user.entity.User;
 import ceos.ipx.domain.user.repository.UserRepository;
 import ceos.ipx.global.exception.BusinessException;
@@ -26,7 +27,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CaseQueryTxService {
 
-    private final UserRepository userRepository;
     private final CaseRepository caseRepository;
     private final InventionComponentRepository componentRepository;
     private final PriorArtRepository priorArtRepository;

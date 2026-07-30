@@ -1,11 +1,13 @@
 package ceos.ipx.domain.cases.service.common;
 
+import ceos.ipx.domain.cases.dto.analysis.CaseAnalysisContext;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.InventionComponent;
 import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.domain.cases.repository.CaseRepository;
 import ceos.ipx.domain.cases.repository.InventionComponentRepository;
 import ceos.ipx.domain.cases.repository.PriorArtRepository;
+import ceos.ipx.domain.report.repository.ReportRepository;
 import ceos.ipx.domain.user.entity.User;
 import ceos.ipx.domain.user.repository.UserRepository;
 import ceos.ipx.global.exception.BusinessException;
@@ -26,10 +28,34 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CaseQueryTxService {
 
-    private final UserRepository userRepository;
     private final CaseRepository caseRepository;
     private final InventionComponentRepository componentRepository;
     private final PriorArtRepository priorArtRepository;
+
+    /**
+     * 분석에 필요한 모든 데이터를 단일 트랜잭션 내에서 원자적으로 조회 및 검증
+     */
+    @Transactional(readOnly = true)
+    public CaseAnalysisContext getAnalysisContext(Long userId, Long caseId) {
+        // 1. Case 조회 및 권한 검증
+        Case caseEntity = caseRepository.findById(caseId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CASE_NOT_FOUND));
+
+        if (!caseEntity.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.CASE_ACCESS_DENIED);
+        }
+
+        // 2. 구성요소 조회 및 검증
+        List<InventionComponent> components = findComponents(caseEntity);
+
+        // 3. 선행기술 조회 및 검증
+        List<PriorArt> priorArts = priorArtRepository.findByCaseEntityOrderByRrfScoreDescCreatedAtAsc(caseEntity);
+        if (priorArts.isEmpty()) {
+            throw new BusinessException(ErrorCode.PRIOR_ART_NOT_FOUND);
+        }
+
+        return new CaseAnalysisContext(caseEntity, components, priorArts);
+    }
 
     /**
      * Case 조회 (권한 검증)
@@ -49,8 +75,7 @@ public class CaseQueryTxService {
     /**
      * Case의 구성요소 조회 (displayOrder ASC)
      */
-    @Transactional(readOnly = true)
-    public List<InventionComponent> findComponents(Case caseEntity) {
+    private List<InventionComponent> findComponents(Case caseEntity) {
         List<InventionComponent> components = componentRepository.findByCaseEntityOrderByDisplayOrderAsc(caseEntity);
 
         if (components.isEmpty())

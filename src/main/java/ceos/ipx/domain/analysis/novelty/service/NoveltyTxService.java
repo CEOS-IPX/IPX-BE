@@ -1,5 +1,8 @@
 package ceos.ipx.domain.analysis.novelty.service;
 
+import ceos.ipx.domain.analysis.inventivestep.dto.response.InventiveStepResponse;
+import ceos.ipx.domain.analysis.inventivestep.entity.InventiveArgument;
+import ceos.ipx.domain.analysis.inventivestep.entity.InventiveStepAnalysis;
 import ceos.ipx.domain.analysis.novelty.dto.response.NoveltyResponse;
 import ceos.ipx.domain.analysis.novelty.entity.ComparisonResult;
 import ceos.ipx.domain.analysis.novelty.entity.NoveltyAnalysis;
@@ -45,15 +48,16 @@ public class NoveltyTxService {
     private final NoveltyComparisonRepository comparisonRepository;
     private final CaseRepository caseRepository;
     private final ReportRepository reportRepository;
+    private final NoveltyMapper mapper;
 
     @Transactional(readOnly = true)
-    public NoveltyAnalysis findAnalysis(Case caseEntity) {
-        return analysisRepository.findByCaseEntity(caseEntity)
+    public NoveltyResponse getAnalysisResponse(Case caseEntity) {
+        NoveltyAnalysis analysis = analysisRepository.findByCaseEntity(caseEntity)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOVELTY_ANALYSIS_NOT_FOUND));
-    }
-    @Transactional(readOnly = true)
-    public List<NoveltyComparison> findComparisons(NoveltyAnalysis analysis) {
-        return comparisonRepository.findAllByAnalysis(analysis);
+
+        List<NoveltyComparison> comparisonEntities = comparisonRepository.findAllByAnalysis(analysis);
+
+        return NoveltyResponse.ofEntities(analysis, comparisonEntities, mapper);
     }
 
     @Transactional

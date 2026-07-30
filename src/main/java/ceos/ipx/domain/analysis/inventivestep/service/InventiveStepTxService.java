@@ -42,14 +42,13 @@ public class InventiveStepTxService {
     private final ReportRepository reportRepository;
 
     @Transactional(readOnly = true)
-    public InventiveStepAnalysis findAnalysis(Case caseEntity) {
-        return analysisRepository.findByCaseEntityWithArts(caseEntity)
+    public InventiveStepResponse getAnalysisResponse(Case caseEntity) {
+        InventiveStepAnalysis analysis = analysisRepository.findByCaseEntityWithArts(caseEntity)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVENTIVE_STEP_ANALYSIS_NOT_FOUND));
-    }
 
-    @Transactional(readOnly = true)
-    public List<InventiveArgument> findArguments(InventiveStepAnalysis analysis) {
-        return argumentRepository.findAllByAnalysis(analysis);
+        List<InventiveArgument> argumentEntities = argumentRepository.findAllByAnalysis(analysis);
+
+        return InventiveStepResponse.ofEntities(analysis, argumentEntities);
     }
 
     @Transactional

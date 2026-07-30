@@ -3,6 +3,7 @@ package ceos.ipx.domain.analysis.novelty.service;
 import ceos.ipx.domain.analysis.novelty.dto.response.NoveltyResponse;
 import ceos.ipx.domain.analysis.novelty.entity.NoveltyAnalysis;
 import ceos.ipx.domain.analysis.novelty.entity.NoveltyComparison;
+import ceos.ipx.domain.cases.dto.analysis.CaseAnalysisContext;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.InventionComponent;
 import ceos.ipx.domain.cases.entity.PriorArt;
@@ -19,6 +20,7 @@ import ceos.ipx.global.python.dto.common.PythonInventionComponent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -52,13 +54,12 @@ public class NoveltyService {
     public NoveltyResponse analyze(Long userId, Long caseId) {
         log.info("[Novelty] 시작: caseId={}", caseId);
 
-        // 1. 사전 조회
-        Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
-        List<InventionComponent> components = caseQueryTxService.findComponents(caseEntity);
+        // 1. 사전 조회 (단일 트랜잭션 안에서 스냅샷 기준 원자적 조회 완료)
+        CaseAnalysisContext context = caseQueryTxService.getAnalysisContext(userId, caseId);
 
-        List<PriorArt> priorArts = caseQueryTxService.findPriorArts(caseEntity);
-        if (priorArts.isEmpty())
-            throw new BusinessException(ErrorCode.PRIOR_ART_NOT_FOUND);
+        Case caseEntity = context.caseEntity();
+        List<InventionComponent> components = context.components();
+        List<PriorArt> priorArts = context.priorArts();
 
         // 2. 상위 3건 선정
         List<PriorArt> topPriorArts = priorArts.stream()
@@ -115,17 +116,14 @@ public class NoveltyService {
     /**
      * 저장된 신규성 분석 결과 조회
      */
+    @Transactional(readOnly = true)
     public NoveltyResponse getAnalysis(Long userId, Long caseId) {
         // 1. Case 조회 (권한 검증)
         Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
 
         // 2. 저장된 분석 조회
-        NoveltyAnalysis analysis = txService.findAnalysis(caseEntity);
-
         // 3. Comparisons 조회
-        List<NoveltyComparison> comparisons = txService.findComparisons(analysis);
-
         // 4. 응답 조립
-        return NoveltyResponse.ofEntities(analysis, comparisons, mapper);
+        return txService.getAnalysisResponse(caseEntity);
     }
 }

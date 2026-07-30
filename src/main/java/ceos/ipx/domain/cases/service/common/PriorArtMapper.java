@@ -35,6 +35,7 @@ public class PriorArtMapper {
                 .ipcCodes(nullSafeList(r.ipcCodes()))
                 .source(determineSource(r.sources()))
                 .rrfScore(r.rrfScore())
+                .relevanceScore(r.relevanceScore() != null ? r.relevanceScore() : 0)
                 .summary(r.summary())
                 .techPurpose(r.purpose())
                 .keyFeatures(nullSafeList(r.features()))

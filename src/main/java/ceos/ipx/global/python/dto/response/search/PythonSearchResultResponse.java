@@ -79,6 +79,8 @@ public record PythonSearchResultResponse(
             @JsonProperty("ipc_codes")
             List<String> ipcCodes,
 
+            @JsonProperty("relevance_score")
+            Integer relevanceScore,
             String summary,
             String purpose,
             List<String> features,

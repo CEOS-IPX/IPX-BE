@@ -38,7 +38,7 @@ public class PriorArtController {
                     특정 사건의 선행기술 결과를 조회합니다.
 
                     - 정렬: rrf_score DESC → created_at ASC
-                    - relevance는 전체 선행문헌 내 순위를 기준으로 계산합니다.
+                    - relevance는 LLM을 통해 계산됩니다.
                     - 상위 20%: VERY_HIGH
                     - 20% 초과 40% 이하: HIGH
                     - 40% 초과 60% 이하: MEDIUM

@@ -4,6 +4,7 @@ import ceos.ipx.domain.analysis.inventivestep.entity.ArgumentType;
 import ceos.ipx.domain.analysis.inventivestep.entity.InventiveArgument;
 import ceos.ipx.domain.analysis.inventivestep.entity.InventiveStepAnalysis;
 import ceos.ipx.domain.analysis.inventivestep.dto.response.InventiveStepResponse;
+import ceos.ipx.domain.cases.dto.analysis.CaseAnalysisContext;
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.InventionComponent;
 import ceos.ipx.domain.cases.entity.PriorArt;
@@ -20,6 +21,7 @@ import ceos.ipx.global.python.dto.common.PythonPriorArtInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -59,13 +61,12 @@ public class InventiveStepService {
     public InventiveStepResponse analyze(Long userId, Long caseId, String primaryApplicationNumber) {
         log.info("[InventiveStep] 시작: caseId={}, d1={}", caseId, primaryApplicationNumber);
 
-        // 1. 사전 조회
-        Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
-        List<InventionComponent> components = caseQueryTxService.findComponents(caseEntity);
+        // 1. 사전 조회 (단일 트랜잭션 안에서 스냅샷 기준 원자적 조회 완료)
+        CaseAnalysisContext context = caseQueryTxService.getAnalysisContext(userId, caseId);
 
-        List<PriorArt> priorArts = caseQueryTxService.findPriorArts(caseEntity);
-        if (priorArts.isEmpty())
-            throw new BusinessException(ErrorCode.PRIOR_ART_NOT_FOUND);
+        Case caseEntity = context.caseEntity();
+        List<InventionComponent> components = context.components();
+        List<PriorArt> priorArts = context.priorArts();
 
         // 2. D1 확정
         PriorArt d1 = findD1(priorArts, primaryApplicationNumber);
@@ -150,18 +151,15 @@ public class InventiveStepService {
         return txService.saveAll(caseId, d1, d2,recommendedContents);
     }
 
+    @Transactional(readOnly = true)
     public InventiveStepResponse getAnalysis(Long userId, Long caseId) {
         // 1. Case 조회 (권한 검증)
         Case caseEntity = caseQueryTxService.findCaseWithAuth(userId, caseId);
 
         // 2. 저장된 분석 조회
-        InventiveStepAnalysis analysis = txService.findAnalysis(caseEntity);
-
         // 3. Arguments 조회 (4개 카테고리 모두)
-        List<InventiveArgument> argumentEntities = txService.findArguments(analysis);
-
         // 4. 응답 조립
-        return InventiveStepResponse.ofEntities(analysis, argumentEntities);
+        return txService.getAnalysisResponse(caseEntity);
     }
 
     private PriorArt findD1(List<PriorArt> priorArts, String primaryApplicationNumber) {

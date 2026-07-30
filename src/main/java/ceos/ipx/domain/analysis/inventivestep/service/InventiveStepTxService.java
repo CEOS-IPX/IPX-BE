@@ -9,6 +9,7 @@ import ceos.ipx.domain.analysis.inventivestep.repository.InventiveStepAnalysisRe
 import ceos.ipx.domain.cases.entity.Case;
 import ceos.ipx.domain.cases.entity.PriorArt;
 import ceos.ipx.domain.cases.repository.CaseRepository;
+import ceos.ipx.domain.report.repository.ReportRepository;
 import ceos.ipx.global.exception.BusinessException;
 import ceos.ipx.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -38,16 +39,16 @@ public class InventiveStepTxService {
     private final CaseRepository caseRepository;
     private final InventiveStepAnalysisRepository analysisRepository;
     private final InventiveArgumentRepository argumentRepository;
+    private final ReportRepository reportRepository;
 
     @Transactional(readOnly = true)
-    public InventiveStepAnalysis findAnalysis(Case caseEntity) {
-        return analysisRepository.findByCaseEntityWithArts(caseEntity)
+    public InventiveStepResponse getAnalysisResponse(Case caseEntity) {
+        InventiveStepAnalysis analysis = analysisRepository.findByCaseEntityWithArts(caseEntity)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVENTIVE_STEP_ANALYSIS_NOT_FOUND));
-    }
 
-    @Transactional(readOnly = true)
-    public List<InventiveArgument> findArguments(InventiveStepAnalysis analysis) {
-        return argumentRepository.findAllByAnalysis(analysis);
+        List<InventiveArgument> argumentEntities = argumentRepository.findAllByAnalysis(analysis);
+
+        return InventiveStepResponse.ofEntities(analysis, argumentEntities);
     }
 
     @Transactional
@@ -87,6 +88,8 @@ public class InventiveStepTxService {
     private void deleteExistingAnalysis(Long caseId) {
         argumentRepository.deleteAllByCaseId(caseId);
         analysisRepository.deleteAllByCaseId(caseId);
+        reportRepository.deleteAllByCaseId(caseId);
+
         log.info("[InventiveStep] 기존 분석 삭제 완료: caseId={}", caseId);
     }
 

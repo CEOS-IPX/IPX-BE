@@ -28,7 +28,7 @@ public record InventiveArgumentUpdateResponse(
         ArgumentType argumentType,
 
         @Schema(
-                description = "해당 진보성 논리의 현재 선택·적용 여부",
+                description = "해당 진보성 논리의 AI 추천 여부",
                 example = "true"
         )
         Boolean recommended,

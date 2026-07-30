@@ -36,7 +36,7 @@ public class InventiveArgumentController {
                     처리 기준:
                     - argumentId로 진보성 논리 분석 조회
                     - 해당 논리가 속한 사건의 소유권 검증
-                    - recommended와 content만 수정
+                    - content 수정
                     - argumentType은 수정하지 않음
                     - 전달되지 않은 필드는 기존 값 유지
                     - content에 빈 객체를 전달하면 내용을 비움
@@ -62,11 +62,7 @@ public class InventiveArgumentController {
             InventiveArgumentUpdateRequest request
     ) {
         InventiveArgumentUpdateResponse response =
-                inventiveArgumentService.update(
-                        userId,
-                        argumentId,
-                        request
-                );
+                inventiveArgumentService.update(userId, argumentId, request);
 
         return ResponseEntity.ok(ApiResponse.ok(response));
     }

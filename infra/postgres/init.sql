@@ -137,6 +137,7 @@ CREATE TABLE IF NOT EXISTS prior_arts (
     source              VARCHAR(20)     NOT NULL,   -- 'SEARCH', 'MANUAL'
     rrf_score           FLOAT           NOT NULL,
 
+    relevance_score     INTEGER         NOT NULL
     reason              TEXT,
     summary             TEXT,
     tech_purpose        TEXT,

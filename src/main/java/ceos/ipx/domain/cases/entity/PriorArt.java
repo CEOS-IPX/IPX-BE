@@ -73,6 +73,9 @@ public class PriorArt {
     @Column(name = "rrf_score", nullable = false)
     private Double rrfScore;
 
+    @Column(name = "relevance_score", nullable = false)
+    private Integer relevanceScore;
+
     @Column(columnDefinition = "TEXT")
     private String reason;
 
@@ -110,6 +113,7 @@ public class PriorArt {
             List<String> ipcCodes,
             PriorArtSource source,
             Double rrfScore,
+            Integer relevanceScore,
             String summary,
             String techPurpose,
             List<String> keyFeatures,
@@ -126,6 +130,7 @@ public class PriorArt {
         this.ipcCodes = ipcCodes != null ? ipcCodes : new ArrayList<>();
         this.source = source;
         this.rrfScore = rrfScore;
+        this.relevanceScore = relevanceScore;
         this.summary = summary;
         this.techPurpose = techPurpose;
         this.keyFeatures = keyFeatures != null ? keyFeatures : new ArrayList<>();

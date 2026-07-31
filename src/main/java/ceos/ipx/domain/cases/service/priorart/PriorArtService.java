@@ -50,7 +50,7 @@ public class PriorArtService {
      * - rrf_score DESC
      * - created_at ASC
      *
-     * relevance는 전체 선행기술 개수와 순위를 기준으로 계산한다.
+     * relevance는 LLM을 통해 계산됨
      */
     public List<PriorArtResponse> getPriorArts(
             Long userId,
@@ -93,17 +93,9 @@ public class PriorArtService {
             );
         }
 
-        List<PriorArt> priorArts =
-                caseQueryTxService.findPriorArts(
-                        priorArt.getCaseEntity()
-                );
-
-        int rank = findRank(priorArts, priorArtId);
-
         Relevance relevance =
                 relevanceCalculator.toRelevance(
-                        rank,
-                        priorArts.size()
+                        priorArt.getRelevanceScore()
                 );
 
         return PriorArtDetailResponse.of(
@@ -213,28 +205,6 @@ public class PriorArtService {
     }
 
     /**
-     * 상세 조회 대상 선행문헌의 순위를 찾는다.
-     *
-     * priorArts는 rrf_score DESC, created_at ASC 순서로 정렬된 목록이다.
-     */
-    private int findRank(
-            List<PriorArt> priorArts,
-            Long priorArtId
-    ) {
-        for (int index = 0; index < priorArts.size(); index++) {
-            PriorArt priorArt = priorArts.get(index);
-
-            if (priorArt.getId().equals(priorArtId)) {
-                return index + 1;
-            }
-        }
-
-        throw new BusinessException(
-                ErrorCode.PRIOR_ART_NOT_FOUND
-        );
-    }
-
-    /**
      * PriorArt 목록을 응답 DTO로 변환하면서 relevance를 계산한다.
      */
     private List<PriorArtResponse> buildResponses(
@@ -244,13 +214,10 @@ public class PriorArtService {
 
         return priorArts.stream()
                 .map(priorArt -> {
-                    int rank =
-                            priorArts.indexOf(priorArt) + 1;
 
                     Relevance relevance =
                             relevanceCalculator.toRelevance(
-                                    rank,
-                                    total
+                                    priorArt.getRelevanceScore()
                             );
 
                     return PriorArtResponse.of(

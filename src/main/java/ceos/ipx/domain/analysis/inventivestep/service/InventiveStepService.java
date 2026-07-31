@@ -61,28 +61,36 @@ public class InventiveStepService {
     public InventiveStepResponse analyze(Long userId, Long caseId, String primaryApplicationNumber) {
         log.info("[InventiveStep] 시작: caseId={}, d1={}", caseId, primaryApplicationNumber);
 
-        // 1. 사전 조회 (단일 트랜잭션 안에서 스냅샷 기준 원자적 조회 완료)
+        // ============================================================
+        // 1. 사전 조회
+        // ============================================================
         CaseAnalysisContext context = caseQueryTxService.getAnalysisContext(userId, caseId);
 
         Case caseEntity = context.caseEntity();
         List<InventionComponent> components = context.components();
         List<PriorArt> priorArts = context.priorArts();
 
+        // ============================================================
         // 2. D1 확정
+        // ============================================================
         PriorArt d1 = findD1(priorArts, primaryApplicationNumber);
 
+        // ============================================================
         // 3. D2 후보 준비 (D1 제외 상위 N건)
+        // ============================================================
         List<PriorArt> d2Candidates = priorArts.stream()
                 .filter(pa -> !pa.getId().equals(d1.getId()))
                 .limit(D2_CANDIDATE_LIMIT)
                 .toList();
 
         if (d2Candidates.isEmpty()) {
-            log.error("[InventiveStep] D2 후보 없음: caseId={}", caseId);
-            throw new BusinessException(ErrorCode.INVENTIVE_STEP_NO_CANDIDATES);
+            // D2 후보 자체가 없는 경우 - D1 단독 분석으로 진행 가능
+            log.warn("[InventiveStep] D2 후보 없음: caseId={}. D1 단독 분석으로 진행.", caseId);
         }
 
+        // ============================================================
         // 4. OpenSearch mget으로 D1 + 후보들의 청구항/초록 조회
+        // ============================================================
         List<String> appNums = new ArrayList<>();
         appNums.add(d1.getApplicationNumber());
         d2Candidates.forEach(pa -> appNums.add(pa.getApplicationNumber()));
@@ -97,36 +105,74 @@ public class InventiveStepService {
             throw new BusinessException(ErrorCode.PRIOR_ART_DOCUMENT_NOT_FOUND);
         }
 
-        // 5. Python 호출 - D2 선정
+        // ============================================================
+        // 5. Python 호출 - D2 선정 (후보 있을 때만)
+        // ============================================================
         PythonPriorArtInfo d1Info = mapper.toPythonPriorArtInfo(d1, d1Doc);
-        List<PythonPriorArtInfo> candidateInfos = d2Candidates.stream()
-                .map(pa -> mapper.toPythonPriorArtInfo(pa, docMap.get(pa.getApplicationNumber())))
-                .toList();
         List<PythonInventionComponent> pyComponents = mapper.toPythonComponents(components);
 
-        PythonSelectSecondaryResponse secondaryResp = pythonClient.selectSecondary(
-                PythonSelectSecondaryRequest.builder()
-                        .inventionTitle(caseEntity.getTitle())
-                        .inventionDescription(caseEntity.getDescription())
-                        .components(pyComponents)
-                        .primaryArt(d1Info)
-                        .candidates(candidateInfos)
-                        .build()
-        );
+        PriorArt d2 = null;
+        PythonPriorArtInfo d2Info = null;
 
-        // 6. D2 확정 (PriorArt 및 PatentDocument)
-        String d2AppNum = secondaryResp.d2ApplicationNumber();
-        PriorArt d2 = d2Candidates.stream()
-                .filter(pa -> pa.getApplicationNumber().equals(d2AppNum))
-                .findFirst()
-                .orElseThrow(() -> {
-                    log.error("[InventiveStep] Python이 반환한 D2가 후보에 없음: {}", d2AppNum);
-                    return new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
-                });
-        PatentDocument d2Doc = docMap.get(d2AppNum);
-        PythonPriorArtInfo d2Info = mapper.toPythonPriorArtInfo(d2, d2Doc);
+        if (!d2Candidates.isEmpty()) {
+            List<PythonPriorArtInfo> candidateInfos = d2Candidates.stream()
+                    .map(pa -> mapper.toPythonPriorArtInfo(pa, docMap.get(pa.getApplicationNumber())))
+                    .toList();
 
-        // 7. Python 호출 - 카테고리 선정
+            PythonSelectSecondaryResponse secondaryResp = pythonClient.selectSecondary(
+                    PythonSelectSecondaryRequest.builder()
+                            .inventionTitle(caseEntity.getTitle())
+                            .inventionDescription(caseEntity.getDescription())
+                            .components(pyComponents)
+                            .primaryArt(d1Info)
+                            .candidates(candidateInfos)
+                            .build()
+            );
+
+            String d2AppNum = secondaryResp.d2ApplicationNumber();
+
+            // ============================================================
+            // 6. D2 확정 (null 대응)
+            // ============================================================
+            if (d2AppNum != null && !d2AppNum.isBlank()) {
+                d2 = d2Candidates.stream()
+                        .filter(pa -> pa.getApplicationNumber().equals(d2AppNum))
+                        .findFirst()
+                        .orElse(null);
+
+                if (d2 == null) {
+                    // Python이 후보에 없는 번호 반환 (오작동)
+                    log.warn(
+                            "[InventiveStep] Python이 반환한 D2가 후보에 없음: {}. D1 단독 분석으로 진행.",
+                            d2AppNum
+                    );
+                } else {
+                    PatentDocument d2Doc = docMap.get(d2AppNum);
+                    if (d2Doc == null) {
+                        log.warn(
+                                "[InventiveStep] D2의 OpenSearch 문서 없음: {}. D1 단독 분석으로 진행.",
+                                d2AppNum
+                        );
+                        d2 = null;  // D2 사용 불가로 처리
+                    } else {
+                        d2Info = mapper.toPythonPriorArtInfo(d2, d2Doc);
+                        log.info(
+                                "[InventiveStep] D2 선정: {}",
+                                d2.getApplicationNumber()
+                        );
+                    }
+                }
+            } else {
+                // Python이 명시적으로 D2 없음 반환 (정상 케이스)
+                log.info(
+                        "[InventiveStep] Python이 D2 미선정. D1 단독 분석 진행."
+                );
+            }
+        }
+
+        // ============================================================
+        // 7. Python 호출 - 카테고리 선정 (D2 Optional 전달)
+        // ============================================================
         PythonSelectCategoriesResponse categoriesResp = pythonClient.selectCategories(
                 buildSelectCategoriesRequest(caseEntity, pyComponents, d1Info, d2Info)
         );
@@ -136,19 +182,42 @@ public class InventiveStepService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
+        // ============================================================
+        // 7-1. D2 없으면 COMBINATION_MOTIVATION 강제 제외 (방어 코드)
+        // ============================================================
+        if (d2 == null && selectedCategories.contains(ArgumentType.COMBINATION_MOTIVATION)) {
+            log.warn(
+                    "[InventiveStep] D2 없는데 COMBINATION_MOTIVATION 선정됨. 자동 제외."
+            );
+            selectedCategories.remove(ArgumentType.COMBINATION_MOTIVATION);
+        }
+
         if (selectedCategories.isEmpty()) {
-            log.error("[InventiveStep] 유효한 카테고리 없음: raw={}", categoriesResp.categories());
+            log.error(
+                    "[InventiveStep] 유효한 카테고리 없음: raw={}, d2={}",
+                    categoriesResp.categories(),
+                    d2 != null ? d2.getApplicationNumber() : "null"
+            );
             throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
         }
 
-        log.info("[InventiveStep] 선정 카테고리: {}", selectedCategories);
+        log.info(
+                "[InventiveStep] 선정 카테고리: {}, D2 상태: {}",
+                selectedCategories,
+                d2 != null ? "있음" : "없음 (D1 단독)"
+        );
 
-        // 8. 선정된 카테고리별로 병렬 호출
+        // ============================================================
+        // 8. 선정된 카테고리별로 병렬 호출 (D2 Optional 전달)
+        // ============================================================
         Map<ArgumentType, Map<String, Object>> recommendedContents = generateArgumentsInParallel(
-                selectedCategories, caseEntity, pyComponents, d1Info, d2Info);
+                selectedCategories, caseEntity, pyComponents, d1Info, d2Info
+        );
 
-        // 9. DB 저장 (기존 삭제 후 새로 생성) 및 응답 반환
-        return txService.saveAll(caseId, d1, d2,recommendedContents);
+        // ============================================================
+        // 9. DB 저장 (D2 nullable 전달)
+        // ============================================================
+        return txService.saveAll(caseId, d1, d2, recommendedContents);
     }
 
     @Transactional(readOnly = true)
@@ -193,12 +262,18 @@ public class InventiveStepService {
      * 실패한 카테고리는 결과에서 제외 (다른 카테고리는 계속 진행)
      */
     private Map<ArgumentType, Map<String, Object>> generateArgumentsInParallel(
-            Set<ArgumentType> selectedCategories, Case caseEntity,
+            Set<ArgumentType> selectedCategories,
+            Case caseEntity,
             List<PythonInventionComponent> pyComponents,
-            PythonPriorArtInfo d1Info, PythonPriorArtInfo d2Info) {
+            PythonPriorArtInfo d1Info,
+            PythonPriorArtInfo d2Info  // nullable
+    ) {
+        Map<ArgumentType, CompletableFuture<Map<String, Object>>> futures =
+                new EnumMap<>(ArgumentType.class);
 
-        Map<ArgumentType, CompletableFuture<Map<String, Object>>> futures = new EnumMap<>(ArgumentType.class);
-
+        // ============================================================
+        // 카테고리별 병렬 태스크 등록
+        // ============================================================
         for (ArgumentType type : selectedCategories) {
             switch (type) {
                 case NUMERICAL_LIMIT -> futures.put(type,
@@ -212,17 +287,28 @@ public class InventiveStepService {
                                         .build()
                         ).thenApply(mapper::toContentMap));
 
-                case COMBINATION_MOTIVATION -> futures.put(type,
-                        asyncService.generateCombinationMotivationAsync(
-                                PythonCombinationMotivationRequest.builder()
-                                        .inventionTitle(caseEntity.getTitle())
-                                        .inventionDescription(caseEntity.getDescription())
-                                        .primaryArt(d1Info)
-                                        .secondaryArt(d2Info)
-                                        .priorArtReference(caseEntity.getPriorArtReference())
-                                        .differentiationNotes(caseEntity.getDifferentiationNotes())
-                                        .build()
-                        ).thenApply(mapper::toContentMap));
+                case COMBINATION_MOTIVATION -> {
+                    // D2 필수 카테고리 - d2Info null이면 스킵 (이중 방어)
+                    if (d2Info == null) {
+                        log.warn(
+                                "[InventiveStep] COMBINATION_MOTIVATION은 D2 필수인데 d2Info=null. " +
+                                        "카테고리 스킵. analyze() 로직 재검토 필요."
+                        );
+                        // 이 카테고리는 등록하지 않음 (결과에서 자동 제외됨)
+                        continue;
+                    }
+                    futures.put(type,
+                            asyncService.generateCombinationMotivationAsync(
+                                    PythonCombinationMotivationRequest.builder()
+                                            .inventionTitle(caseEntity.getTitle())
+                                            .inventionDescription(caseEntity.getDescription())
+                                            .primaryArt(d1Info)
+                                            .secondaryArt(d2Info)
+                                            .priorArtReference(caseEntity.getPriorArtReference())
+                                            .differentiationNotes(caseEntity.getDifferentiationNotes())
+                                            .build()
+                            ).thenApply(mapper::toContentMap));
+                }
 
                 case COMMON_TECHNIQUE -> futures.put(type,
                         asyncService.generateCommonTechniqueAsync(
@@ -250,7 +336,17 @@ public class InventiveStepService {
             }
         }
 
-        // 모든 병렬 작업 완료 대기
+        // ============================================================
+        // 모든 병렬 태스크 등록 완료 확인
+        // ============================================================
+        if (futures.isEmpty()) {
+            log.error("[InventiveStep] 병렬 실행할 카테고리가 없음. D2 없음 + COMBINATION_MOTIVATION 단독 선정 가능성.");
+            throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
+        }
+
+        // ============================================================
+        // 모든 병렬 작업 완료 대기 (for 루프 종료 후)
+        // ============================================================
         CompletableFuture.allOf(futures.values().toArray(new CompletableFuture[0]))
                 .exceptionally(ex -> {
                     log.warn("[InventiveStep] 일부 카테고리 생성 실패 (계속 진행)", ex);
@@ -258,7 +354,9 @@ public class InventiveStepService {
                 })
                 .join();
 
+        // ============================================================
         // 성공한 것만 결과 수집
+        // ============================================================
         Map<ArgumentType, Map<String, Object>> results = new EnumMap<>(ArgumentType.class);
         for (Map.Entry<ArgumentType, CompletableFuture<Map<String, Object>>> entry : futures.entrySet()) {
             try {
@@ -275,6 +373,13 @@ public class InventiveStepService {
             log.error("[InventiveStep] 모든 카테고리 실패");
             throw new BusinessException(ErrorCode.PYTHON_SERVER_ERROR);
         }
+
+        log.info(
+                "[InventiveStep] 병렬 생성 완료: 성공 {}/{} 카테고리 ({})",
+                results.size(),
+                futures.size(),
+                results.keySet()
+        );
 
         return results;
     }
